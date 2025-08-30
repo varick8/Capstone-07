@@ -4,6 +4,8 @@ import mongoose from "mongoose";
 import dotenv from "dotenv";
 import sensorRouter from "./routes/sensor";
 import ispuRouter from "./routes/ispu";
+import cookieParser from "cookie-parser";
+import authRouter from "./routes/auth";
 
 dotenv.config();
 
@@ -27,6 +29,8 @@ app.use(cors({
   credentials: true
 }));
 
+app.use(cookieParser());
+
 // Connect to MongoDB
 mongoose.connect(process.env.MONGODB_URI as string)
   .then(() => console.log("✅ MongoDB connected"))
@@ -40,6 +44,7 @@ app.get("/", (req, res) => {
 // API routes
 app.use("/api/sensors", sensorRouter);
 app.use("/api/ispu", ispuRouter);
+app.use("/api/auth", authRouter);
 
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
