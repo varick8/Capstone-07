@@ -1,6 +1,6 @@
 import React from "react";
 
-// Komponen Card sederhana (tanpa lib eksternal)
+// Komponen Card sederhana
 function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
     <div className={`rounded-2xl shadow-md bg-blue-50 text-black ${className}`}>{children}</div>
@@ -42,8 +42,10 @@ export default function AirQualityDashboard() {
           <p className="text-sm">jasicawilliamson@gmail.com</p>
         </div>
 
-        {/* Location & Date */}
-        <div className="flex justify-between items-center bg-blue-50 rounded-2xl px-5 py-3 mb-6">
+      {/* Grid 3 kolom 2 baris */}
+      <div className="grid grid-cols-3 grid-rows-[60px,1fr] gap-4 mb-6">
+        {/* Location & Date (col-span-2, row-1) */}
+        <Card className="col-span-2 flex justify-between items-center bg-blue-50 px-5 py-2">
           <div className="flex items-center gap-2">
             <span className="text-blue-600">📍</span>
             <span className="font-semibold">Sleman, Yogyakarta</span>
@@ -52,80 +54,81 @@ export default function AirQualityDashboard() {
             <p>Rabu, 7 Mei 2025</p>
             <p className="font-semibold">09.00</p>
           </div>
-        </div>
+        </Card>
 
-        {/* Baris atas: Peringatan + Rekomendasi + Hasil ISPU */}
-        <div className="grid grid-cols-12 gap-4 mb-6">
-          {/* Peringatan */}
-          <Card className="col-span-3 bg-red-100 border-l-4 border-red-600 flex flex-col items-center justify-center py-4">
-            <div className="text-red-600 text-3xl mb-1">⚠️</div>
-            <p className="font-bold text-red-700 leading-tight">PERINGATAN</p>
-            <p className="text-xs">Kadar CO Sangat Tinggi</p>
-          </Card>
-
-          {/* Rekomendasi */}
-          <Card className="col-span-4 flex items-center justify-center py-2">
-            <div className="text-center px-3">
-              <p className="font-bold mb-1">Rekomendasi</p>
-              <p className="text-xs">
-                Gunakan masker karbon aktif saat berada di luar untuk mengurangi paparan CO.
-              </p>
-            </div>
-          </Card>
-
-          {/* Hasil ISPU */}
-          <Card className="col-span-5 p-4 bg-grey/80">
-            <p className="font-semibold text-center mb-3">Hasil ISPU</p>
-            <div className="space-y-2">
-              {ispuData.map((row, i) => {
-                const cat = categoryOf(row.value);
-                return (
-                  <div
-                    key={i}
-                    className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-2 hover:shadow-sm"
-                    style={{ borderLeftWidth: 6, borderLeftColor: cat.dot }}
-                  >
-                    <div className="flex items-center gap-2">
-                      <Dot color={cat.dot} />
-                      <div className="leading-tight">
-                        <p className="text-sm font-semibold">{row.name}</p>
-                        <span className={`text-[11px] px-2 py-0.5 rounded-full ${cat.chip}`}>{cat.label}</span>
-                      </div>
-                    </div>
-                    <div className="text-lg font-bold">{Math.round(row.value)}</div>
+       {/* Hasil ISPU (col-3, span 2 rows) */}
+      <Card className="row-span-2 p-4 bg-grey/80">
+        <p className="font-medium text-sm text-center mb-2">Hasil ISPU</p>
+        <div className="space-y-1">
+          {ispuData.map((row, i) => {
+            const cat = categoryOf(row.value);
+            return (
+              <div
+                key={i}
+                className="flex items-center justify-between rounded-lg border border-slate-200 bg-white px-2 py-2 hover:shadow-sm"
+                style={{ borderLeftWidth: 5, borderLeftColor: cat.dot }}
+              >
+                <div className="flex items-center gap-3">
+                  <Dot color={cat.dot} />
+                  <div className="leading-tight">
+                    <p className="text-[12px] font-semibold">{row.name}</p>
+                    <span className={`text-[10px] px-1.5 py-1 rounded-full ${cat.chip}`}>
+                      {cat.label}
+                    </span>
                   </div>
-                );
-              })}
-            </div>
-          </Card>
+                </div>
+                <div className="text-sm font-bold">{Math.round(row.value)}</div>
+              </div>
+            );
+          })}
+        </div>
+      </Card>
+
+
+        {/* Peringatan (col-1, row-2) */}
+        <Card className="flex flex-col items-center justify-center bg-red-100 border-l-4 border-red-600 py-5 min-h-[180px]">
+          <div className="text-red-600 text-3xl mb-1">⚠️</div>
+          <p className="font-bold text-red-700 leading-tight">PERINGATAN</p>
+          <p className="text-xs">Kadar CO Sangat Tinggi</p>
+        </Card>
+
+        {/* Rekomendasi (col-2, row-2) */}
+        <Card className="flex items-center justify-center py-6 min-h-[120px]">
+          <div className="text-center px-3">
+            <p className="font-bold mb-1">Rekomendasi</p>
+            <p className="text-xs">
+              Gunakan masker karbon aktif saat berada di luar untuk mengurangi paparan CO.
+            </p>
+          </div>
+        </Card>
+      </div>
+
+
+       {/* Baris berikutnya: Data polutan + Diagram */}
+      <div className="grid grid-cols-12 gap-3">
+        {/* Data polutan */}
+        <div className="col-span-7">
+          <div className="grid grid-cols-2 gap-2">
+            {detailedData.map((item, idx) => (
+              <Card
+                key={idx}
+                className="p-3 text-center bg-slate-100"
+              >
+                <p className="text-[11px] font-semibold leading-snug">{item.name}</p>
+                <p className="text-base font-bold leading-snug">{item.value}</p>
+                <p className={`text-[11px] ${item.statusColor}`}>{item.status}</p>
+              </Card>
+            ))}
+          </div>
         </div>
 
-        {/* Baris kedua: Data polutan + Diagram */}
-        <div className="grid grid-cols-12 gap-4">
-          {/* Data polutan */}
-          <div className="col-span-7">
-            <div className="grid grid-cols-2 gap-3">
-              {detailedData.map((item, idx) => (
-                <Card key={idx} className="p-3 text-center bg-slate-100">
-                  <p className="text-[13px] font-semibold leading-tight">{item.name}</p>
-                  <p className="text-xl font-bold leading-tight">{item.value}</p>
-                  <p className={`text-[11px] ${item.statusColor}`}>{item.status}</p>
-                </Card>
-              ))}
-            </div>
-          </div>
 
           {/* Diagram */}
-          <Card className="col-span-5 px-5 py-6 bg-slate-100 h-60 flex items-center justify-center">
+          <Card className="col-span-5 px-5 py-6 bg-slate-100 h-40 flex items-center justify-center">
             <p className="text-xs opacity-70">
               [Diagram placeholder] → di sini nanti diagram batang/garis ISPU
             </p>
           </Card>
-        </div>
-
-        {/* Footer kecil */}
-        <div className="text-center text-xs text-gray-500 mt-6">
-          Klik untuk melihat selengkapnya
         </div>
       </div>
     </div>
