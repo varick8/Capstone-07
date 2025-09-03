@@ -1,4 +1,7 @@
-import React from "react";
+"use client";
+import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { IoArrowBack } from "react-icons/io5"; // ikon back
 
 // Komponen Card sederhana
 function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
@@ -10,6 +13,15 @@ function Card({ children, className = "" }: { children: React.ReactNode; classNa
 }
 
 export default function AirQualityDetailPage() {
+  const router = useRouter();
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Ambil email dari localStorage
+    const email = localStorage.getItem("userEmail");
+    setUserEmail(email);
+  }, []);
+
   // Data spesifik untuk polutan CO
   const pollutant = {
     name: "CO (Carbon Monoksida)",
@@ -29,11 +41,21 @@ export default function AirQualityDetailPage() {
 
   return (
     <div className="min-h-screen bg-white font-sans text-black">
-      <div className="max-w-[1100px] mx-auto p-5">
+      <div className="max-w-[1200px] mx-auto p-5">
         {/* Header */}
-        <div className="flex justify-between items-center bg-blue-900 text-white rounded-2xl px-5 py-4 mb-4">
-          <h1 className="text-lg font-semibold">Indeks Standar Pencemaran Udara</h1>
-          <p className="text-sm">jasicawilliamson@gmail.com</p>
+        <div className="flex justify-between items-center bg-blue-900 text-white rounded-2xl px-5 py-4 mb-6">
+          <div className="flex items-center gap-3">
+            {/* Tombol Back */}
+                <button
+                    onClick={() => router.push("/dashboard")}
+                    className="p-2 rounded-full hover:bg-blue-800 transition"
+                    >
+                    <IoArrowBack size={22} />
+                </button>
+
+            <h1 className="text-lg font-semibold">Indeks Standar Pencemaran Udara</h1>
+          </div>
+          {userEmail && <div className="text-sm font-medium mt-1">{userEmail}</div>}
         </div>
 
         {/* Judul Polutan + Tanggal */}
@@ -69,7 +91,9 @@ export default function AirQualityDetailPage() {
               </div>
               <div className="flex justify-between items-center">
                 <span>Kategori</span>
-                <span className={`px-2 py-1 rounded-md ${pollutant.categoryColor} text-sm font-semibold`}>
+                <span
+                  className={`px-2 py-1 rounded-md ${pollutant.categoryColor} text-sm font-semibold`}
+                >
                   {pollutant.category}
                 </span>
               </div>
@@ -95,7 +119,9 @@ export default function AirQualityDetailPage() {
 
         {/* Diagram */}
         <Card className="p-6 h-64 flex items-center justify-center bg-slate-100">
-          <p className="text-sm opacity-70">[Diagram placeholder] → Grafik tren polutan CO</p>
+          <p className="text-sm opacity-70">
+            [Diagram placeholder] → Grafik tren polutan CO
+          </p>
         </Card>
       </div>
     </div>
