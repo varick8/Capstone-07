@@ -1,10 +1,26 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { IoArrowBack } from "react-icons/io5"; // ikon back
+import { IoArrowBack } from "react-icons/io5";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
+  Legend,
+} from "recharts";
 
 // Komponen Card sederhana
-function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+function Card({
+  children,
+  className = "",
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
     <div className={`rounded-2xl shadow-md bg-white text-black ${className}`}>
       {children}
@@ -39,6 +55,15 @@ export default function AirQualityDetailPage() {
     ],
   };
 
+  // Data history ISPU 4 polutan
+  const historyData = [
+    { time: "07:00", PM25: 70, CO: 210, NO2: 100, O3: 40 },
+    { time: "08:00", PM25: 80, CO: 230, NO2: 120, O3: 42 },
+    { time: "09:00", PM25: 85, CO: 250, NO2: 130, O3: 45 },
+    { time: "10:00", PM25: 90, CO: 275.7, NO2: 132.94, O3: 41.67 },
+    { time: "11:00", PM25: 95, CO: 260, NO2: 125, O3: 43 },
+  ];
+
   return (
     <div className="min-h-screen bg-white font-sans text-black">
       <div className="max-w-[1200px] mx-auto p-5">
@@ -46,16 +71,19 @@ export default function AirQualityDetailPage() {
         <div className="flex justify-between items-center bg-blue-900 text-white rounded-2xl px-5 py-4 mb-6">
           <div className="flex items-center gap-3">
             {/* Tombol Back */}
-                <button
-                    onClick={() => router.push("/dashboard")}
-                    className="p-2 rounded-full hover:bg-blue-800 transition"
-                    >
-                    <IoArrowBack size={22} />
-                </button>
-
-            <h1 className="text-lg font-semibold">Indeks Standar Pencemaran Udara</h1>
+            <button
+              onClick={() => router.push("/dashboard")}
+              className="p-2 rounded-full hover:bg-blue-800 transition"
+            >
+              <IoArrowBack size={22} />
+            </button>
+            <h1 className="text-lg font-semibold">
+              Indeks Standar Pencemaran Udara
+            </h1>
           </div>
-          {userEmail && <div className="text-sm font-medium mt-1">{userEmail}</div>}
+          {userEmail && (
+            <div className="text-sm font-medium mt-1">{userEmail}</div>
+          )}
         </div>
 
         {/* Judul Polutan + Tanggal */}
@@ -63,7 +91,8 @@ export default function AirQualityDetailPage() {
           <h2 className="text-base font-bold">{pollutant.name}</h2>
           <div className="text-sm">
             <p>
-              <span className="font-semibold">Diambil pada :</span> Rabu, 7 Mei 2025
+              <span className="font-semibold">Diambil pada :</span> Rabu, 7 Mei
+              2025
             </p>
             <p>
               <span className="font-semibold">Pukul :</span> 09.30
@@ -117,11 +146,45 @@ export default function AirQualityDetailPage() {
           </Card>
         </div>
 
-        {/* Diagram */}
-        <Card className="p-6 h-64 flex items-center justify-center bg-slate-100">
-          <p className="text-sm opacity-70">
-            [Diagram placeholder] → Grafik tren polutan CO
-          </p>
+        {/* Diagram History ISPU */}
+        <Card className="p-6 h-80 flex items-center justify-center bg-slate-100">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={historyData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="time" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Line
+                type="monotone"
+                dataKey="PM25"
+                stroke="#3b82f6"
+                name="PM 2.5"
+                strokeWidth={2}
+              />
+              <Line
+                type="monotone"
+                dataKey="CO"
+                stroke="#ef4444"
+                name="CO"
+                strokeWidth={2}
+              />
+              <Line
+                type="monotone"
+                dataKey="NO2"
+                stroke="#f97316"
+                name="NO₂"
+                strokeWidth={2}
+              />
+              <Line
+                type="monotone"
+                dataKey="O3"
+                stroke="#22c55e"
+                name="O₃"
+                strokeWidth={2}
+              />
+            </LineChart>
+          </ResponsiveContainer>
         </Card>
       </div>
     </div>
