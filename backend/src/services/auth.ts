@@ -17,7 +17,12 @@ export const createAccount = async ({
 
   const session = await SessionModel.create({ userId: user._id, userAgent });
 
-  const accessToken = signToken({ userId: user._id, sessionId: session._id }, "15m");
+  // Include email in access token
+  const accessToken = signToken({ 
+    userId: user._id, 
+    sessionId: session._id,
+    email: user.email 
+  }, "15m");
   const refreshToken = signToken({ sessionId: session._id }, "7d");
 
   return { user, accessToken, refreshToken };
@@ -39,11 +44,17 @@ export const loginUser = async ({
 
   const valid = await bcrypt.compare(password, user.password);
   if (!valid) {
-    throw new Error("Invalid credentials");
+    throw new Error("Invalid password");
   }
 
   const session = await SessionModel.create({ userId: user._id, userAgent });
-  const accessToken = signToken({ userId: user._id, sessionId: session._id }, "15m");
+  
+  // Include email in access token
+  const accessToken = signToken({ 
+    userId: user._id, 
+    sessionId: session._id,
+    email: user.email 
+  }, "15m");
   const refreshToken = signToken({ sessionId: session._id }, "7d");
 
   return { accessToken, refreshToken };
@@ -55,6 +66,23 @@ export const refreshUserAccessToken = async (refreshToken: string) => {
     throw new Error("Invalid refresh token");
   }
 
-  const accessToken = signToken({ sessionId: decoded.sessionId }, "15m");
+  // When refreshing, we need to get the user data to include email
+  const session = await SessionModel.findById(decoded.sessionId);
+  if (!session) {
+    throw new Error("Session not found");
+  }
+
+  const user = await UserModel.findById(session.userId);
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  // Include email in the new access token
+  const accessToken = signToken({ 
+    userId: user._id, 
+    sessionId: decoded.sessionId,
+    email: user.email 
+  }, "15m");
+  
   return { accessToken };
 };

@@ -39,6 +39,36 @@ export const logoutHandler = async (req: Request, res: Response) => {
   clearAuthCookies(res).status(200).json({ message: "Logout successful" });
 };
 
+// GET /api/auth/me - Check if user is authenticated
+export const meHandler = async (req: Request, res: Response) => {
+  try {
+    // Extract access token from cookies
+    const token = req.cookies.accessToken;
+    
+    if (!token) {
+      res.status(401).json({ message: "No token provided" });
+    }
+    
+    // Verify token using your existing verifyToken function
+    const payload = verifyToken(token);
+    
+    if (!payload) {
+      res.status(401).json({ message: "Invalid or expired token" });
+    }
+    
+    // Token is valid, return user data
+    // Assuming your JWT payload contains user information
+    res.status(200).json({
+      email: payload?.email,
+      userId: payload?.userId,
+      // Add other user data from JWT payload as needed
+    });
+  } catch (error) {
+    console.error("Auth verification error:", error);
+    res.status(401).json({ message: "Authentication failed" });
+  }
+};
+
 export const refreshHandler = async (req: Request, res: Response) => {
   const refreshToken = req.cookies.refreshToken;
   if (!refreshToken) {

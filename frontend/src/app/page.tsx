@@ -7,15 +7,46 @@ export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
+    setError("");
 
-    // Simpan email ke localStorage
-    localStorage.setItem("userEmail", email);
+    try {
+      const response = await fetch("http://localhost:8080/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include", // Important: This allows cookies to be set
+        body: JSON.stringify({
+          email,
+          password,
+        }),
+      });
 
-    // Redirect ke dashboard
-    router.push("/dashboard");
+      const data = await response.json();
+
+      if (response.ok) {
+        // Login successful - cookies are automatically set by the server
+        // Store email for any client-side usage if needed
+        localStorage.setItem("userEmail", email);
+        
+        // Redirect to dashboard
+        router.push("/dashboard");
+      } else {
+        // Login failed
+        setError(data.message || "Login failed");
+      }
+    } catch (err) {
+      setError("Network error. Please check your connection and try again.");
+      console.error("Login error:", err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -38,6 +69,13 @@ export default function LoginPage() {
               Silakan login untuk melanjutkan
             </p>
 
+            {/* Error Message */}
+            {error && (
+              <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg">
+                {error}
+              </div>
+            )}
+
             <form className="space-y-4" onSubmit={handleLogin}>
               <div>
                 <label className="block mb-1 text-sm font-medium text-gray-700">
@@ -48,7 +86,8 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900"
+                  disabled={isLoading}
+                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900 disabled:bg-gray-50 disabled:cursor-not-allowed"
                 />
               </div>
               <div>
@@ -60,14 +99,26 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900"
+                  disabled={isLoading}
+                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900 disabled:bg-gray-50 disabled:cursor-not-allowed"
                 />
               </div>
               <button
                 type="submit"
-                className="w-full py-2 text-white bg-blue-900 rounded-lg hover:bg-blue-800 transition font-semibold"
+                disabled={isLoading}
+                className="w-full py-2 text-white bg-blue-900 rounded-lg hover:bg-blue-800 transition font-semibold disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center"
               >
-                Login
+                {isLoading ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Logging in...
+                  </>
+                ) : (
+                  "Login"
+                )}
               </button>
             </form>
           </div>
