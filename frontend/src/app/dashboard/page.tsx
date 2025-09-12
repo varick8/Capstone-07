@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { LogOut } from "lucide-react";
+import { LogOut, Thermometer, Droplets } from "lucide-react";
 import {
   BarChart,
   Bar,
@@ -12,6 +12,28 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
+
+// Interface for sensor data
+interface SensorData {
+  _id: string;
+  co: number;
+  pm25: number;
+  temp: number;
+  hum: number;
+  loc: string;
+  no2: number;
+  o3: number;
+  dateTime: string;
+  __v: number;
+}
+
+// Interface for detailed data
+interface DetailedDataItem {
+  name: string;
+  value: string;
+  status: string;
+  statusColor: string;
+}
 
 // Komponen Card sederhana
 function Card({
@@ -77,6 +99,37 @@ function categoryOf(v: number) {
   };
 }
 
+// Function to calculate ISPU from sensor values
+function calculateISPU(pollutant: string, value: number): number {
+  // Simplified ISPU calculation - you may need to adjust based on actual ISPU formula
+  switch (pollutant) {
+    case "PM 2,5":
+      return Math.min(300, (value / 35) * 100); // Rough approximation
+    case "CO":
+      return Math.min(300, (value / 30) * 100); // Rough approximation
+    case "O3":
+      return Math.min(300, (value / 235) * 100); // Rough approximation
+    case "NO2":
+      return Math.min(300, (value / 200) * 100); // Rough approximation
+    default:
+      return 0;
+  }
+}
+
+// Function to get status based on value and pollutant type
+function getStatus(pollutant: string, value: number): { status: string; statusColor: string } {
+  const ispu = calculateISPU(pollutant, value);
+  const category = categoryOf(ispu);
+  
+  return {
+    status: category.label,
+    statusColor: `text-${category.dot.includes('#22c55e') ? 'green' : 
+                        category.dot.includes('#facc15') ? 'yellow' :
+                        category.dot.includes('#f97316') ? 'orange' :
+                        category.dot.includes('#ef4444') ? 'red' : 'purple'}-600`
+  };
+}
+
 export default function AirQualityDashboard() {
   const router = useRouter();
   const [userEmail, setUserEmail] = useState<string | null>(null);
@@ -86,6 +139,128 @@ export default function AirQualityDashboard() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [sensorData, setSensorData] = useState<SensorData | null>(null);
+  const [detailedData, setDetailedData] = useState<DetailedDataItem[]>([]);
+  const [ispuData, setIspuData] = useState([
+    { name: "PM 2,5", value: 0 },
+    { name: "CO", value: 0 },
+    { name: "O3", value: 0 },
+    { name: "NO2", value: 0 },
+  ]);
+
+  // Fetch sensor data from API
+  const fetchSensorData = async () => {
+    try {
+      const response = await fetch("http://localhost:8080/api/sensors/lastest", {
+        method: "GET",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        const data: SensorData = await response.json();
+        setSensorData(data);
+        
+        // Update temperature from sensor data
+        setTemperature(`${data.temp} °C`);
+        
+        // Update ISPU data
+        const newIspuData = [
+          { name: "PM 2,5", value: calculateISPU("PM 2,5", data.pm25) },
+          { name: "CO", value: calculateISPU("CO", data.co) },
+          { name: "O3", value: calculateISPU("O3", data.o3) },
+          { name: "NO2", value: calculateISPU("NO2", data.no2) },
+        ];
+        setIspuData(newIspuData);
+        
+        // Update detailed data
+        const newDetailedData: DetailedDataItem[] = [
+          {
+            name: "PM 2,5",
+            value: `${data.pm25} µg/m³`,
+            ...getStatus("PM 2,5", data.pm25),
+          },
+          {
+            name: "CO",
+            value: `${data.co} µg/m³`,
+            ...getStatus("CO", data.co),
+          },
+          {
+            name: "O3",
+            value: `${data.o3} µg/m³`,
+            ...getStatus("O3", data.o3),
+          },
+          {
+            name: "NO2",
+            value: `${data.no2} µg/m³`,
+            ...getStatus("NO2", data.no2),
+          },
+        ];
+        setDetailedData(newDetailedData);
+        
+      } else {
+        console.error("Failed to fetch sensor data");
+        // Keep default/dummy data if API fails
+        setDetailedData([
+          {
+            name: "PM 2,5",
+            value: "-- µg/m³",
+            status: "Data tidak tersedia",
+            statusColor: "text-gray-600",
+          },
+          {
+            name: "CO",
+            value: "-- µg/m³",
+            status: "Data tidak tersedia",
+            statusColor: "text-gray-600",
+          },
+          {
+            name: "O3",
+            value: "-- µg/m³",
+            status: "Data tidak tersedia",
+            statusColor: "text-gray-600",
+          },
+          {
+            name: "NO2",
+            value: "-- µg/m³",
+            status: "Data tidak tersedia",
+            statusColor: "text-gray-600",
+          },
+        ]);
+      }
+    } catch (error) {
+      console.error("Error fetching sensor data:", error);
+      // Set error state for detailed data
+      setDetailedData([
+        {
+          name: "PM 2,5",
+          value: "Error",
+          status: "Gagal memuat data",
+          statusColor: "text-red-600",
+        },
+        {
+          name: "CO",
+          value: "Error",
+          status: "Gagal memuat data",
+          statusColor: "text-red-600",
+        },
+        {
+          name: "O3",
+          value: "Error",
+          status: "Gagal memuat data",
+          statusColor: "text-red-600",
+        },
+        {
+          name: "NO2",
+          value: "Error",
+          status: "Gagal memuat data",
+          statusColor: "text-red-600",
+        },
+      ]);
+    }
+  };
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -107,6 +282,9 @@ export default function AirQualityDashboard() {
           // Set user email from API response or localStorage
           const email = userData.email || localStorage.getItem("userEmail");
           setUserEmail(email);
+          
+          // Fetch sensor data after authentication
+          await fetchSensorData();
         } else {
           // User is not authenticated
           setIsAuthenticated(false);
@@ -148,8 +326,10 @@ export default function AirQualityDashboard() {
       setCurrentDate(tanggal);
       setCurrentTime(jam);
 
-      // TODO: fetch suhu real dari API cuaca
-      setTemperature("26 °C");
+      // Set up interval to refresh sensor data every 30 seconds
+      const interval = setInterval(fetchSensorData, 30000);
+      
+      return () => clearInterval(interval);
     }
   }, [isAuthenticated]);
 
@@ -185,42 +365,6 @@ export default function AirQualityDashboard() {
   if (!isAuthenticated) {
     return null;
   }
-
-  // ISPU per polutan
-  const ispuData = [
-    { name: "PM 2,5", value: 90.4 },
-    { name: "CO", value: 275.7 },
-    { name: "O3", value: 41.67 },
-    { name: "NO2", value: 132.94 },
-  ];
-
-  // Data polutan (dengan satuan & status)
-  const detailedData = [
-    {
-      name: "PM 2,5",
-      value: "55,4 µg/m³",
-      status: "Sedang",
-      statusColor: "text-yellow-600",
-    },
-    {
-      name: "CO",
-      value: "30000 µg/m³",
-      status: "Sangat Tidak Sehat",
-      statusColor: "text-red-600",
-    },
-    {
-      name: "O3",
-      value: "100 µg/m³",
-      status: "Baik/Sehat",
-      statusColor: "text-green-600",
-    },
-    {
-      name: "NO2",
-      value: "500 µg/m³",
-      status: "Tidak Sehat",
-      statusColor: "text-orange-600",
-    },
-  ];
 
   // helper redirect ke halaman detail dengan query param
   const goToDetail = (polutan: string) => {
@@ -282,10 +426,17 @@ export default function AirQualityDashboard() {
           {/* Location & Date */}
           <Card className="col-span-2 flex justify-between items-center bg-blue-50 px-5 py-2">
             <div className="flex flex-col">
-              <span className="font-semibold">📍 Sleman, Yogyakarta</span>
-              <span className="text-xs text-gray-500">
-                Suhu: {temperature}
-              </span>
+              <span className="font-semibold">📍 {sensorData?.loc || "Sleman, Yogyakarta"}</span>
+             <span className="flex items-center gap-3 text-xs text-gray-500">
+  <span className="flex items-center gap-1">
+    <Thermometer className="w-4 h-4 text-blue-600" />
+    {temperature}
+  </span>
+  <span className="flex items-center gap-1">
+    <Droplets className="w-4 h-4 text-blue-600" />
+    {sensorData?.hum || "--"}%
+  </span>
+</span>
             </div>
             <div className="text-right text-sm">
               <p>{currentDate}</p>
@@ -325,7 +476,11 @@ export default function AirQualityDashboard() {
           <Card className="flex flex-col items-center justify-center bg-red-100 border-l-4 border-red-600 py-5 min-h-[180px]">
             <div className="text-red-600 text-3xl mb-1">⚠️</div>
             <p className="font-bold text-red-700 leading-tight">PERINGATAN</p>
-            <p className="text-xs">Kadar CO Sangat Tinggi</p>
+            <p className="text-xs">
+              {sensorData && sensorData.co > 15 ? "Kadar CO Sangat Tinggi" :
+               sensorData && sensorData.pm25 > 75 ? "Kadar PM 2.5 Tinggi" :
+               "Pantau Kualitas Udara"}
+            </p>
           </Card>
 
           {/* Rekomendasi */}
@@ -333,8 +488,11 @@ export default function AirQualityDashboard() {
             <div className="text-center px-5">
               <p className="font-bold mb-1">Rekomendasi</p>
               <p className="text-xs">
-                Gunakan masker karbon aktif saat berada di luar untuk
-                mengurangi paparan CO.
+                {sensorData && sensorData.co > 200 
+                  ? "Gunakan masker karbon aktif saat berada di luar untuk mengurangi paparan CO."
+                  : sensorData && sensorData.pm25 > 200
+                  ? "Batasi aktivitas outdoor dan gunakan masker N95."
+                  : "Kualitas udara cukup baik untuk aktivitas normal."}
               </p>
             </div>
           </Card>
