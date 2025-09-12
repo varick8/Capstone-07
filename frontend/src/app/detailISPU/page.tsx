@@ -2,15 +2,16 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { IoArrowBack } from "react-icons/io5";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
   LineChart,
   Line,
   XAxis,
   YAxis,
-  Tooltip,
-  ResponsiveContainer,
   CartesianGrid,
+  Tooltip,
   Legend,
+  ResponsiveContainer,
 } from "recharts";
 
 // Komponen Card sederhana
@@ -28,17 +29,69 @@ function Card({
   );
 }
 
+// Helper untuk format hari + tanggal
+function formatDayAndDate(date: Date) {
+  const hari = date.toLocaleDateString("id-ID", { weekday: "long" });
+  const tanggal = date.toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "long",
+  });
+  return `${hari}, ${tanggal}`;
+}
+
+// Helper untuk format tanggal lengkap + tahun
+function formatTanggalIndonesia(date: Date) {
+  return new Intl.DateTimeFormat("id-ID", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(date);
+}
+
+// Helper untuk format waktu
+function formatJamMenit(date: Date) {
+  return new Intl.DateTimeFormat("id-ID", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(date);
+}
+
 export default function AirQualityDetailPage() {
   const router = useRouter();
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [tanggal, setTanggal] = useState("");
+  const [jam, setJam] = useState("");
+  const [historyData, setHistoryData] = useState<any[]>([]);
+  const [startIndex, setStartIndex] = useState(0); // indeks awal window
+
+  const windowSize = 7; // tampilkan data 7 hari 
 
   useEffect(() => {
-    // Ambil email dari localStorage
     const email = localStorage.getItem("userEmail");
     setUserEmail(email);
+
+    const now = new Date();
+    setTanggal(formatTanggalIndonesia(now));
+    setJam(formatJamMenit(now));
+
+    // generate data 14 hari
+    const today = new Date();
+    const data = Array.from({ length: 14 }).map((_, i) => {
+      const d = new Date(today);
+      d.setDate(today.getDate() - (13 - i));
+      return {
+        date: formatDayAndDate(d),
+        PM25: Math.floor(Math.random() * 50 + 60),
+        CO: Math.floor(Math.random() * 50 + 220),
+        NO2: Math.floor(Math.random() * 40 + 100),
+        O3: Math.floor(Math.random() * 10 + 40),
+      };
+    });
+    setHistoryData(data);
   }, []);
 
-  // Data spesifik untuk polutan CO
   const pollutant = {
     name: "CO (Carbon Monoksida)",
     concentration: "30000 µg/m³",
@@ -55,14 +108,17 @@ export default function AirQualityDetailPage() {
     ],
   };
 
-  // Data history ISPU 4 polutan
-  const historyData = [
-    { time: "07:00", PM25: 70, CO: 210, NO2: 100, O3: 40 },
-    { time: "08:00", PM25: 80, CO: 230, NO2: 120, O3: 42 },
-    { time: "09:00", PM25: 85, CO: 250, NO2: 130, O3: 45 },
-    { time: "10:00", PM25: 90, CO: 275.7, NO2: 132.94, O3: 41.67 },
-    { time: "11:00", PM25: 95, CO: 260, NO2: 125, O3: 43 },
-  ];
+  // slice data untuk ditampilkan
+  const visibleData = historyData.slice(startIndex, startIndex + windowSize);
+
+  // handler geser
+  const handlePrev = () => {
+    if (startIndex > 0) setStartIndex(startIndex - 1);
+  };
+  const handleNext = () => {
+    if (startIndex + windowSize < historyData.length)
+      setStartIndex(startIndex + 1);
+  };
 
   return (
     <div className="min-h-screen bg-white font-sans text-black">
@@ -70,7 +126,6 @@ export default function AirQualityDetailPage() {
         {/* Header */}
         <div className="flex justify-between items-center bg-blue-900 text-white rounded-2xl px-5 py-4 mb-6">
           <div className="flex items-center gap-3">
-            {/* Tombol Back */}
             <button
               onClick={() => router.push("/dashboard")}
               className="p-2 rounded-full hover:bg-blue-800 transition"
@@ -89,21 +144,19 @@ export default function AirQualityDetailPage() {
         {/* Judul Polutan + Tanggal */}
         <div className="flex justify-between items-center bg-blue-50 rounded-2xl px-5 py-3 mb-6">
           <h2 className="text-base font-bold">{pollutant.name}</h2>
-          <div className="text-sm">
+          <div className="text-sm text-right">
             <p>
-              <span className="font-semibold">Diambil pada :</span> Rabu, 7 Mei
-              2025
+              <span className="font-semibold">Diambil pada :</span> {tanggal}
             </p>
             <p>
-              <span className="font-semibold">Pukul :</span> 09.30
+              <span className="font-semibold">Pukul :</span> {jam}
             </p>
           </div>
         </div>
 
         {/* Data utama + deskripsi + rekomendasi */}
         <div className="grid grid-cols-12 gap-5 mb-8">
-          {/* Data Utama */}
-          <Card className="col-span-4 bg-blue-50 p-4">
+          <Card className="col-span-12 md:col-span-4 bg-blue-50 p-4">
             <h3 className="font-bold text-blue-700 mb-3">Data Utama</h3>
             <div className="space-y-3 text-sm">
               <div className="flex justify-between items-center">
@@ -129,14 +182,12 @@ export default function AirQualityDetailPage() {
             </div>
           </Card>
 
-          {/* Deskripsi Singkat */}
-          <Card className="col-span-4 bg-purple-50 p-4">
+          <Card className="col-span-12 md:col-span-4 bg-purple-50 p-4">
             <h3 className="font-bold text-purple-700 mb-3">Deskripsi Singkat</h3>
             <p className="text-sm leading-relaxed">{pollutant.description}</p>
           </Card>
 
-          {/* Rekomendasi */}
-          <Card className="col-span-4 bg-green-50 p-4">
+          <Card className="col-span-12 md:col-span-4 bg-green-50 p-4">
             <h3 className="font-bold text-green-700 mb-3">Rekomendasi</h3>
             <ul className="list-decimal list-inside text-sm space-y-1">
               {pollutant.recommendations.map((rec, i) => (
@@ -147,20 +198,53 @@ export default function AirQualityDetailPage() {
         </div>
 
         {/* Diagram History ISPU */}
-        <Card className="p-6 h-80 flex items-center justify-center bg-slate-100">
+        <Card className="p-6 h-[400px] bg-slate-100 relative">
+          {/* Tombol navigasi */}
+          <button
+            onClick={handlePrev}
+            disabled={startIndex === 0}
+            className="absolute left-2 top-1/2 -translate-y-1/2 bg-white shadow-md rounded-full p-2 hover:bg-gray-100 disabled:opacity-40"
+          >
+            <ChevronLeft size={20} />
+          </button>
+          <button
+            onClick={handleNext}
+            disabled={startIndex + windowSize >= historyData.length}
+            className="absolute right-2 top-1/2 -translate-y-1/2 bg-white shadow-md rounded-full p-2 hover:bg-gray-100 disabled:opacity-40"
+          >
+            <ChevronRight size={20} />
+          </button>
+
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={historyData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="time" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
+            <LineChart
+              data={visibleData}
+              margin={{ top: 20, right: 30, left: 0, bottom: 30 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="#d1d5db" />
+              <XAxis
+                dataKey="date"
+                angle={-20}
+                textAnchor="end"
+                height={60}
+                tick={{ fontSize: 12 }}
+              />
+              <YAxis tick={{ fontSize: 12 }} />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: "#f9fafb",
+                  border: "1px solid #e5e7eb",
+                  borderRadius: "8px",
+                }}
+              />
+              <Legend wrapperStyle={{ fontSize: "12px" }} />
               <Line
                 type="monotone"
                 dataKey="PM25"
                 stroke="#3b82f6"
                 name="PM 2.5"
                 strokeWidth={2}
+                dot={{ r: 3 }}
+                activeDot={{ r: 6 }}
               />
               <Line
                 type="monotone"
@@ -168,6 +252,8 @@ export default function AirQualityDetailPage() {
                 stroke="#ef4444"
                 name="CO"
                 strokeWidth={2}
+                dot={{ r: 3 }}
+                activeDot={{ r: 6 }}
               />
               <Line
                 type="monotone"
@@ -175,6 +261,8 @@ export default function AirQualityDetailPage() {
                 stroke="#f97316"
                 name="NO₂"
                 strokeWidth={2}
+                dot={{ r: 3 }}
+                activeDot={{ r: 6 }}
               />
               <Line
                 type="monotone"
@@ -182,6 +270,8 @@ export default function AirQualityDetailPage() {
                 stroke="#22c55e"
                 name="O₃"
                 strokeWidth={2}
+                dot={{ r: 3 }}
+                activeDot={{ r: 6 }}
               />
             </LineChart>
           </ResponsiveContainer>
