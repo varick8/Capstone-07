@@ -53,10 +53,10 @@ export default function LoginPage() {
     <div className="min-h-screen bg-white font-sans text-black">
       <div className="max-w-[1500px] mx-auto p-5">
         {/* Header */}
-        <div className="flex justify-between items-center bg-blue-900 text-white rounded-2xl px-5 py-4 mb-6">
-          <h1 className="text-lg font-semibold">
-            Indeks Standar Pencemaran Udara
-          </h1>
+        <div className="flex justify-between items-start bg-blue-900 text-white rounded-2xl px-5 py-4 mb-6">
+          <div>
+            <h1 className="text-lg font-semibold">Indeks Standar Pencemaran Udara</h1>
+          </div>
         </div>
 
         {/* Login Form */}
