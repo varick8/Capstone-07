@@ -102,15 +102,47 @@ function categoryOf(v: number) {
   };
 }
 
+// Mapping peringatan
+const warnings: Record<string, string> = {
+  "PM₂.₅": "Kadar PM₂.₅ tinggi",
+  "NO₂": "Kadar NO₂ tinggi",
+  "O₃": "Kadar O₃ tinggi",
+  "CO": "Kadar CO tinggi",
+};
+
+// Tambahkan mapping rekomendasi
+const recommendations: Record<string, string[]> = {
+  "PM₂.₅": [
+    "Kurangi aktivitas luar ruangan dan gunakan masker respirator",
+    "Segera masuk ke ruangan tertutup bila terasa sesak, batuk, atau mata perih",
+    "Tetap terhidrasi untuk membantu tubuh mengurangi efek iritasi.",
+  ],
+  "NO₂": [
+    "Kurangi aktivitas di jalan raya yang padat",
+    "Gunakan masker ketika berpergian",
+    "Segera berpindah ke area dengan sirkulasi udara lebih baik jika mata/paru terasa perih.",
+  ],
+  "O₃": [
+    "Hindari aktivitas luar di siang hingga sore atau sekitar pukul 10.00–16.00 saat O₃ mencapai puncak.",
+    "Bila terpaksa, batasi durasi paparan dan gunakan kacamata pelindung untuk cegah iritasi mata.",
+    "Pilih beraktivitas di pagi atau sore menjelang malam",
+  ],
+  "CO": [
+    "Segera menjauh dari sumber polusi yaitu asap kendaraan, knalpot, kebakaran terbuka",
+    "Jangan berada lama di sekitar area tertutup.",
+    "Jika mulai pusing, mual, atau lemas segera ke area terbuka yang banyak oksigen.",
+  ],
+};
+
 // Function to calculate ISPU from sensor values
 function calculateISPU(pollutant: string, value: number): number {
   // Simplified ISPU calculation - you may need to adjust based on actual ISPU formula
   switch (pollutant) {
-    case "PM 2,5":
+    case "PM₂.₅":
       return Math.min(300, (value / 35) * 100); // Rough approximation
     case "CO":
       return Math.min(300, (value / 30) * 100); // Rough approximation
-    case "O3":
+    case "O₃":
       return Math.min(300, (value / 235) * 100); // Rough approximation
     case "NO2":
       return Math.min(300, (value / 200) * 100); // Rough approximation
@@ -133,11 +165,11 @@ function getStatus(pollutant: string, value: number) {
 
   // Mapping kategori → warna teks
   const colorMap: Record<string, string> = {
-    "Baik": "text-green-600",
-    "Sedang": "text-blue-600",
+    "Baik": "text-green-500",
+    "Sedang": "text-blue-500",
     "Tidak Sehat": "text-yellow-500",
-    "Sangat Tidak Sehat": "text-red-600",
-    "Berbahaya": "text-black-600",
+    "Sangat Tidak Sehat": "text-red-500",
+    "Berbahaya": "text-black-500",
   };
 
 
@@ -153,10 +185,10 @@ export default function AirQualityDashboard() {
   const [sensorData, setSensorData] = useState<SensorData | null>(null);
   const [detailedData, setDetailedData] = useState<DetailedDataItem[]>([]);
   const [ispuData, setIspuData] = useState([
-    { name: "PM 2,5", value: 0 },
+    { name: "PM₂.₅", value: 0 },
     { name: "CO", value: 0 },
-    { name: "O3", value: 0 },
-    { name: "NO2", value: 0 },
+    { name: "O₃", value: 0 },
+    { name: "NO₂", value: 0 },
   ]);
 
   // Fetch sensor data from API
@@ -179,20 +211,20 @@ export default function AirQualityDashboard() {
 
         // Update ISPU data
         const newIspuData = [
-          { name: "PM 2,5", value: calculateISPU("PM 2,5", data.pm25) },
+          { name: "PM₂.₅", value: calculateISPU("PM₂.₅", data.pm25) },
           { name: "CO", value: calculateISPU("CO", data.co) },
-          { name: "O3", value: calculateISPU("O3", data.o3) },
-          { name: "NO2", value: calculateISPU("NO2", data.no2) },
+          { name: "O₃", value: calculateISPU("O₃", data.o3) },
+          { name: "NO₂", value: calculateISPU("NO₂", data.no2) },
         ];
         setIspuData(newIspuData);
 
         // Update detailed data
         const newDetailedData: DetailedDataItem[] = [
           {
-            name: "PM 2,5",
-            value: `${data.pm25}`, // angka saja
+            name: "PM₂.₅",
+            value: `${data.pm25}`,
             unit: "µg/m³",
-            ...getStatus("PM 2,5", data.pm25),
+            ...getStatus("PM₂.₅", data.pm25),
           },
           {
             name: "CO",
@@ -201,16 +233,16 @@ export default function AirQualityDashboard() {
             ...getStatus("CO", data.co),
           },
           {
-            name: "O3",
+            name: "O₃",
             value: `${data.o3}`,
             unit: "µg/m³",
-            ...getStatus("O3", data.o3),
+            ...getStatus("O₃", data.o3),
           },
           {
-            name: "NO2",
+            name: "NO₂",
             value: `${data.no2}`,
             unit: "µg/m³",
-            ...getStatus("NO2", data.no2),
+            ...getStatus("NO₂", data.no2),
           },
         ];
 
@@ -317,7 +349,7 @@ export default function AirQualityDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-white font-sans text-black">
+    <div className="min-h-screen bg-white font-sans text-black ">
       <div className="max-w-[1500px] mx-auto p-5">
         {/* Header */}
         <div className="flex justify-between items-start bg-blue-900 text-white rounded-2xl px-5 py-4 mb-6">
@@ -405,46 +437,51 @@ export default function AirQualityDashboard() {
                   <div
                     key={i}
                     onClick={() => goToDetail(row.name)}
-                    className={`flex flex-col items-center justify-center rounded-lg px-2 py-3 text-white cursor-pointer transition active:scale-[0.99] ${cat.chip}`}
+                    className={`flex flex-col items-center justify-center rounded-lg px-2 py-3 text-white cursor-pointer transition 
+                                active:scale-[0.97] hover:scale-[1.02] hover:shadow-lg hover:opacity-90 ${cat.chip}`}
                   >
-                    <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center justify-center gap-2 w-full">
                     <p className="text-[15px] font-semibold">{row.name} :</p>
                     <p className="text-sm font-bold">{Math.round(row.value)}</p>
                   </div>
-                  </div>
+                </div>
                 );
               })}
             </div>
           </Card>
 
-          {/* Peringatan */}
-            <Card className="flex flex-col items-center justify-center bg-red-100 border-l-4 border-red-600 py-5 min-h-[180px]">
-              <div className="text-red-600 text-3xl mb-1">⚠️</div>
+          {/* Container Peringatan + Rekomendasi */}
+         <div className="flex flex-row gap-4 justify-start w-[1000px] mt-4 ml-1">
+            
+            {/* Peringatan */}
+            <Card className="flex flex-col items-center justify-center bg-red-100 border-l-4 border-red-600 py-4 px-6 w-[200px]">
+              <div className="text-red-600 text-2xl mb-1">⚠️</div>
               <p className="font-bold text-red-700 leading-tight">PERINGATAN</p>
-              <p className="text-sm"> 
-                {sensorData && sensorData.co > 15
-                  ? "Kadar CO Sangat Tinggi"
-                  : sensorData && sensorData.pm25 > 75
-                  ? "Kadar PM 2.5 Tinggi"
-                  : "Pantau Kualitas Udara"}
-              </p>
+              <p className="text-xs text-center mt-1">Kadar PM₂.₅ tinggi</p>
             </Card>
 
-          {/* Rekomendasi */}
-          <Card className="flex items-center justify-center bg-blue-90 py-6 min-h-[120px]">
-            <div className="text-center px-12">
-              <p className="font-bold mb-1">Rekomendasi</p>
-               <Card className="row-span-4 p-6 border-slate-200 bg-white">
-              <p className="text-sm">
-                {sensorData && sensorData.co > 200
-                  ? "Gunakan masker karbon aktif saat berada di luar untuk mengurangi paparan CO."
-                  : sensorData && sensorData.pm25 > 200
-                  ? "Batasi aktivitas outdoor dan gunakan masker N95."
-                  : "Kualitas udara cukup baik untuk aktivitas normal."}
-              </p>
-               </Card>
+            {/* Rekomendasi */}
+            <Card className="flex flex-col bg-blue-100 py-4 px-6 w-[650px]">
+            <p className="font-bold mb-2 text-center">Rekomendasi</p>
+
+            {/* Flex row supaya gambar & card putih sejajar */}
+            <div className="flex flex-row items-center gap-3">
+              {/* Gambar di kiri */}
+              <div className="flex-shrink-0">
+                <img src="/image.png" alt="gambar" className="w-12 h-12" />
+              </div>
+
+              {/* Card isi rekomendasi */}
+              <Card className="p-4 border-slate-200 bg-white w-full">
+                <ul className="list-disc list-inside text-xs space-y-1 text-gray-700">
+                  <li>Kurangi aktivitas luar ruangan dan gunakan masker</li>
+                  <li>Segera masuk ke ruangan tertutup bila terasa sesak, batuk, atau mata perih</li>
+                  <li>Tetap terhidrasi untuk membantu tubuh mengurangi efek iritasi</li>
+                </ul>
+              </Card>
             </div>
           </Card>
+          </div>
         </div>
 
         {/* Data polutan */}
@@ -468,7 +505,7 @@ export default function AirQualityDashboard() {
                           {item.name}
                         </span>
                         {/* Value */}
-                        <p className="text-2xl font-bold">{item.value}</p>
+                        <p className="text-xl font-bold">{item.value}</p>
                       </div>
                       {/* Baris bawah: Dot + Status di kiri, Unit di kanan */}
                       <div className="flex justify-between items-center mt-2">
@@ -478,7 +515,7 @@ export default function AirQualityDashboard() {
                             {item.status}
                           </p>
                         </div>
-                        <p className="text-xl text-gray-700">{item.unit}</p>
+                        <p className="text-m text-gray-700">{item.unit}</p>
                       </div>
                     </div>
                     </Card>
@@ -488,20 +525,27 @@ export default function AirQualityDashboard() {
             </Card>
           </div>
           
-          {/*Diagram */}
-           <Card className="col-span-4 px-5 py-5 bg-slate-100 flex items-center justify-center">
-            <ResponsiveContainer width="100%" height={250}>
+          {/* Diagram */}
+          <Card className="col-span-4 px-5 py-5 bg-slate-100 flex items-center justify-center">
+            <ResponsiveContainer width="100%" height={230}>
               <BarChart data={ispuData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" />
                 <YAxis />
                 <Tooltip />
                 <Bar dataKey="value">
-                  {ispuData.map((entry, idx) => {
-                    const cat = categoryOf(entry.value);
-                    return <Cell key={`cell-${idx}`} fill={cat.dot} />;
-                  })}
-                </Bar>
+                {ispuData.map((entry, idx) => {
+                  const cat = categoryOf(entry.value);
+                  return (
+                    <Cell
+                      key={`cell-${idx}`}
+                      fill={cat.dot}
+                      className="cursor-pointer transition hover:opacity-80 active:scale-95"
+                      onClick={() => goToDetail(entry.name)}
+                    />
+                  );
+                })}
+              </Bar>
               </BarChart>
             </ResponsiveContainer>
           </Card>
