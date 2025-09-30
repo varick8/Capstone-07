@@ -1,8 +1,8 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { IoArrowBack } from "react-icons/io5";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, LogOut } from "lucide-react";
 import {
   LineChart,
   Line,
@@ -58,15 +58,83 @@ function formatJamMenit(date: Date) {
   }).format(date);
 }
 
+// Mapping kategori ISPU
+function categoryOf(v: number) {
+  if (v <= 50)
+    return {
+      label: "Baik",
+      color: "bg-green-600 text-white",
+    };
+  if (v <= 100)
+    return {
+      label: "Sedang",
+      color: "bg-blue-600 text-white",
+    };
+  if (v <= 200)
+    return {
+      label: "Tidak Sehat",
+      color: "bg-yellow-400 text-black",
+    };
+  if (v <= 300)
+    return {
+      label: "Sangat Tidak Sehat",
+      color: "bg-red-600 text-white",
+    };
+  return {
+    label: "Berbahaya",
+    color: "bg-black text-white",
+  };
+}
+
+// Get pollutant descriptions and recommendations
+function getPollutantInfo(pollutantName: string, category: string) {
+  const recommendations = {
+    "Baik": ["Kualitas udara baik untuk aktivitas normal.", "Tetap jaga kesehatan dengan olahraga teratur."],
+    "Sedang": ["Aktivitas outdoor masih aman untuk sebagian besar orang.", "Kelompok sensitif disarankan membatasi aktivitas outdoor yang intens."],
+    "Tidak Sehat": ["Batasi aktivitas outdoor.", "Gunakan masker saat beraktivitas di luar ruangan."],
+    "Sangat Tidak Sehat": ["Hindari aktivitas outdoor.", "Gunakan masker N95 atau setara.", "Tetap di dalam ruangan dengan ventilasi yang baik."],
+    "Berbahaya": ["Hindari semua aktivitas outdoor.", "Gunakan air purifier di dalam ruangan.", "Segera cari pertolongan medis jika mengalami gejala pernapasan."]
+  };
+
+  const descriptions = {
+    "PM25": "PM 2.5 (Particulate Matter 2.5)",
+    "CO": "CO (Carbon Monoksida)",
+    "O3": "O3 (Ozon)",
+    "NO2": "NO2 (Nitrogen Dioksida)"
+  };
+
+  return {
+    fullName: descriptions[pollutantName as keyof typeof descriptions] || pollutantName,
+    recommendations: recommendations[category as keyof typeof recommendations] || ["Pantau kualitas udara secara berkala."]
+  };
+}
+
+interface SensorDetailResponse {
+  name: string;
+  sensorValue: number;
+  ispuValue: number;
+  dateTime: string;
+  location: string;
+  unit: string;
+}
+
 export default function AirQualityDetailPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [tanggal, setTanggal] = useState("");
   const [jam, setJam] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [historyData, setHistoryData] = useState<any[]>([]);
-  const [startIndex, setStartIndex] = useState(0); // indeks awal window
+  const [startIndex, setStartIndex] = useState(0);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [sensorDetail, setSensorDetail] = useState<SensorDetailResponse | null>(null);
+  const [dataLoading, setDataLoading] = useState(true);
+  const [currentPollutant, setCurrentPollutant] = useState<string>("");
 
-  const windowSize = 7; // tampilkan data 7 hari 
+
+  const windowSize = 7;
 
   useEffect(() => {
     const email = localStorage.getItem("userEmail");
@@ -76,37 +144,131 @@ export default function AirQualityDetailPage() {
     setTanggal(formatTanggalIndonesia(now));
     setJam(formatJamMenit(now));
 
-    // generate data 14 hari
-    const today = new Date();
-    const data = Array.from({ length: 14 }).map((_, i) => {
-      const d = new Date(today);
-      d.setDate(today.getDate() - (13 - i));
-      return {
-        date: formatDayAndDate(d),
-        PM25: Math.floor(Math.random() * 50 + 60),
-        CO: Math.floor(Math.random() * 50 + 220),
-        NO2: Math.floor(Math.random() * 40 + 100),
-        O3: Math.floor(Math.random() * 10 + 40),
-      };
-    });
-    setHistoryData(data);
   }, []);
 
-  const pollutant = {
-    name: "CO (Carbon Monoksida)",
-    concentration: "30000 µg/m³",
-    ispu: 275.7,
-    category: "Sangat Tidak Sehat",
-    categoryColor: "bg-red-600 text-white",
-    description: `CO berada dalam kategori Sangat Tidak Sehat. 
-    Konsentrasi CO sebesar 30.000 µg/m³ menandakan kualitas udara yang sangat buruk 
-    untuk kelompok sensitif dan masyarakat umum.`,
-    recommendations: [
-      "Hindari aktivitas luar ruangan.",
-      "Gunakan masker karbon aktif.",
-      "Periksa ventilasi dalam ruangan.",
-    ],
+  // Fetch sensor detail data
+  const fetchSensorDetail = async (pollutantParam: string) => {
+    try {
+      setDataLoading(true);
+      const response = await fetch(`http://localhost:8080/api/merge/detail/${pollutantParam}`, {
+        method: "GET",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        const data: SensorDetailResponse = await response.json();
+        setSensorDetail(data);
+
+        // Update time display from API data
+        const apiDate = new Date(data.dateTime);
+        setTanggal(formatTanggalIndonesia(apiDate));
+        setJam(formatJamMenit(apiDate));
+      } else {
+        console.error("Failed to fetch sensor detail");
+      }
+    } catch (error) {
+      console.error("Error fetching sensor detail:", error);
+    } finally {
+      setDataLoading(false);
+    }
   };
+
+  useEffect(() => {
+      const checkAuth = async () => {
+        try {
+          const response = await fetch("http://localhost:8080/api/auth/me", {
+            method: "GET",
+            credentials: "include",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          });
+
+          if (response.ok) {
+            const userData = await response.json();
+            setIsAuthenticated(true);
+
+            const email = userData.email || localStorage.getItem("userEmail");
+            setUserEmail(email);
+
+            // Get pollutant parameter and fetch data
+            const pollutantParam = searchParams.get("polutan");
+
+            if (pollutantParam) {
+              setCurrentPollutant(pollutantParam.toUpperCase());
+              await fetchSensorDetail(pollutantParam.toLocaleLowerCase());
+
+              // Generate history data for the specific pollutant
+              const today = new Date();
+              const data = Array.from({ length: 14 }).map((_, i) => {
+                const d = new Date(today);
+                d.setDate(today.getDate() - (13 - i));
+                const baseValue = pollutantParam.toUpperCase() === 'PM25' ? 60 :
+                                 pollutantParam.toUpperCase() === 'CO' ? 220 :
+                                 pollutantParam.toUpperCase() === 'NO2' ? 100 : 40;
+                const variance = pollutantParam.toUpperCase() === 'PM25' ? 50 :
+                               pollutantParam.toUpperCase() === 'CO' ? 50 :
+                               pollutantParam.toUpperCase() === 'NO2' ? 40 : 10;
+                return {
+                  date: formatDayAndDate(d),
+                  value: Math.floor(Math.random() * variance + baseValue),
+                };
+              });
+              setHistoryData(data);
+            }
+
+          } else {
+            setIsAuthenticated(false);
+            localStorage.removeItem("userEmail");
+            router.push("/");
+            return;
+          }
+        } catch (error) {
+          console.error("Auth check failed:", error);
+          setIsAuthenticated(false);
+          localStorage.removeItem("userEmail");
+          router.push("/");
+          return;
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      checkAuth();
+    }, [router, searchParams]);
+
+  // Create dynamic pollutant data based on API response
+  const getPollutantData = () => {
+    if (!sensorDetail) {
+      return {
+        name: "Memuat data...",
+        concentration: "-- µg/m³",
+        ispu: 0,
+        category: "Memuat...",
+        categoryColor: "bg-gray-400 text-white",
+        description: "Memuat data sensor...",
+        recommendations: ["Tunggu data dimuat."],
+      };
+    }
+
+    const category = categoryOf(sensorDetail.ispuValue);
+    const pollutantInfo = getPollutantInfo(sensorDetail.name, category.label);
+
+    return {
+      name: pollutantInfo.fullName,
+      concentration: `${sensorDetail.sensorValue} ${sensorDetail.unit}`,
+      ispu: sensorDetail.ispuValue,
+      category: category.label,
+      categoryColor: category.color,
+      description: `${pollutantInfo.fullName} berada dalam kategori ${category.label}. Konsentrasi ${sensorDetail.sensorValue} ${sensorDetail.unit} dengan nilai ISPU ${sensorDetail.ispuValue}.`,
+      recommendations: pollutantInfo.recommendations,
+    };
+  };
+
+  const pollutant = getPollutantData();
 
   // slice data untuk ditampilkan
   const visibleData = historyData.slice(startIndex, startIndex + windowSize);
@@ -119,6 +281,36 @@ export default function AirQualityDetailPage() {
     if (startIndex + windowSize < historyData.length)
       setStartIndex(startIndex + 1);
   };
+  const handleLogout = async () => {
+    try {
+      await fetch("http://localhost:8080/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch (error) {
+      console.error("Logout error:", error);
+    } finally {
+      localStorage.removeItem("userEmail");
+      router.push("/");
+    }
+  };
+
+  if (isLoading || dataLoading) {
+    return (
+      <div className="min-h-screen bg-white font-sans text-black flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-900 mx-auto mb-4"></div>
+          <p className="text-gray-600">
+            Mengambil data...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-white font-sans text-black">
@@ -136,9 +328,42 @@ export default function AirQualityDetailPage() {
               Indeks Standar Pencemaran Udara
             </h1>
           </div>
-          {userEmail && (
-            <div className="text-sm font-medium mt-1">{userEmail}</div>
-          )}
+          {/* Email dropdown */}
+          <div className="relative">
+            {userEmail && (
+              <div className="relative">
+                <button
+                  onClick={() => setDropdownOpen((prev) => !prev)}
+                  className="flex items-center gap-1 text-sm font-medium px-3 py-1 rounded-lg hover:bg-blue-700 transition"
+                >
+                  {userEmail}
+                  <svg
+                    className={`w-4 h-4 transform transition-transform ${
+                      dropdownOpen ? "rotate-180" : "rotate-0"
+                    }`}
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                {dropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-40 bg-white text-black rounded-lg shadow-lg border border-gray-200 z-10">
+                    <button
+                      onClick={handleLogout}
+                      className="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 rounded-lg"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      Keluar
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Judul Polutan + Tanggal */}
@@ -161,13 +386,13 @@ export default function AirQualityDetailPage() {
             <div className="space-y-3 text-sm">
               <div className="flex justify-between items-center">
                 <span>Konsentrasi</span>
-                <span className="px-2 py-1 rounded-md bg-red-600 text-white text-sm font-semibold">
+                <span className={`px-2 py-1 rounded-md ${pollutant.categoryColor} text-sm font-semibold`}>
                   {pollutant.concentration}
                 </span>
               </div>
               <div className="flex justify-between items-center">
                 <span>ISPU</span>
-                <span className="px-2 py-1 rounded-md bg-red-600 text-white text-sm font-semibold">
+                <span className={`px-2 py-1 rounded-md ${pollutant.categoryColor} text-sm font-semibold`}>
                   {pollutant.ispu}
                 </span>
               </div>
@@ -239,36 +464,13 @@ export default function AirQualityDetailPage() {
               <Legend wrapperStyle={{ fontSize: "12px" }} />
               <Line
                 type="monotone"
-                dataKey="PM25"
-                stroke="#3b82f6"
-                name="PM 2.5"
-                strokeWidth={2}
-                dot={{ r: 3 }}
-                activeDot={{ r: 6 }}
-              />
-              <Line
-                type="monotone"
-                dataKey="CO"
-                stroke="#ef4444"
-                name="CO"
-                strokeWidth={2}
-                dot={{ r: 3 }}
-                activeDot={{ r: 6 }}
-              />
-              <Line
-                type="monotone"
-                dataKey="NO2"
-                stroke="#f97316"
-                name="NO₂"
-                strokeWidth={2}
-                dot={{ r: 3 }}
-                activeDot={{ r: 6 }}
-              />
-              <Line
-                type="monotone"
-                dataKey="O3"
-                stroke="#22c55e"
-                name="O₃"
+                dataKey="value"
+                stroke={currentPollutant === 'PM25' ? '#3b82f6' :
+                       currentPollutant === 'CO' ? '#ef4444' :
+                       currentPollutant === 'NO2' ? '#f97316' : '#22c55e'}
+                name={currentPollutant === 'PM25' ? 'PM 2.5' :
+                      currentPollutant === 'CO' ? 'CO' :
+                      currentPollutant === 'NO2' ? 'NO₂' : 'O₃'}
                 strokeWidth={2}
                 dot={{ r: 3 }}
                 activeDot={{ r: 6 }}

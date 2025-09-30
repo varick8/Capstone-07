@@ -46,14 +46,14 @@ export const meHandler = async (req: Request, res: Response) => {
     const token = req.cookies.accessToken;
     
     if (!token) {
-      res.status(401).json({ message: "No token provided" });
+      return res.status(401).json({ message: "No token provided" });
     }
     
     // Verify token using your existing verifyToken function
     const payload = verifyToken(token);
     
     if (!payload) {
-      res.status(401).json({ message: "Invalid or expired token" });
+      return res.status(401).json({ message: "Invalid or expired token" });
     }
     
     // Token is valid, return user data
@@ -63,25 +63,24 @@ export const meHandler = async (req: Request, res: Response) => {
       userId: payload?.userId,
       // Add other user data from JWT payload as needed
     });
-  } catch (error) {
-    console.error("Auth verification error:", error);
-    res.status(401).json({ message: "Authentication failed" });
+  } catch (err: any) {
+    res.status(401).json({ message: err.message });
   }
 };
 
 export const refreshHandler = async (req: Request, res: Response) => {
   const refreshToken = req.cookies.refreshToken;
   if (!refreshToken) {
-    res.status(401).json({ message: "Missing refresh token" });
+    return res.status(401).json({ message: "Missing refresh token" });
   }
 
   try {
     const { accessToken } = await refreshUserAccessToken(refreshToken);
-    res
+    return res
       .status(200)
       .cookie("accessToken", accessToken, getAccessTokenCookieOptions())
       .json({ message: "Access token refreshed" });
   } catch (err: any) {
-    res.status(401).json({ message: err.message });
+    return res.status(401).json({ message: err.message });
   }
 };

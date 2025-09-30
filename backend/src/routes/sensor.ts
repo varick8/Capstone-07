@@ -3,8 +3,13 @@ import { getSensors, createSensor, getLatestSensor } from "../controllers/sensor
 
 const sensorRouter = Router();
 
-sensorRouter.get("/", getSensors);
-sensorRouter.get("/lastest", getLatestSensor);
-sensorRouter.post("/", createSensor);
+// Async wrapper to handle errors properly
+const asyncHandler = (fn: any) => (req: any, res: any, next: any) => {
+  Promise.resolve(fn(req, res, next)).catch(next);
+};
+
+sensorRouter.get("/", asyncHandler(getSensors));
+sensorRouter.get("/lastest", asyncHandler(getLatestSensor));
+sensorRouter.post("/", asyncHandler(createSensor));
 
 export default sensorRouter;

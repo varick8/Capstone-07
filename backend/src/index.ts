@@ -6,6 +6,7 @@ import sensorRouter from "./routes/sensor";
 import ispuRouter from "./routes/ispu";
 import cookieParser from "cookie-parser";
 import authRouter from "./routes/auth";
+import mergeRouter from "./routes/merge";
 
 dotenv.config();
 
@@ -43,6 +44,7 @@ app.get("/", (req, res) => {
 
 // API routes
 app.use("/api/sensors", sensorRouter);
+app.use("/api/merge", mergeRouter);
 app.use("/api/ispu", ispuRouter);
 app.use("/api/auth", authRouter);
 
