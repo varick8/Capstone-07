@@ -14,31 +14,31 @@ import {
   Cell,
 } from "recharts";
 
-// Interface for sensor data
+/** Interfaces */
 interface SensorData {
-  _id: string;
-  co: number;
-  pm25: number;
-  temp: number;
-  hum: number;
-  loc: string;
-  no2: number;
-  o3: number;
   dateTime: string;
-  __v: number;
+  location: string;
+  sensors: {
+    co: { name: string; value: number; unit: string; ispuValue: number };
+    pm25: { name: string; value: number; unit: string; ispuValue: number };
+    no2: { name: string; value: number; unit: string; ispuValue: number };
+    o3: { name: string; value: number; unit: string; ispuValue: number };
+    temp: { name: string; value: number; unit: string };
+    hum: { name: string; value: number; unit: string };
+  };
 }
 
-// Interface for detailed data
 interface DetailedDataItem {
   name: string;
   value: string;
-  unit: string;   
+  unit: string;
   status: string;
   statusColor: string;
   dotColor: string;
+  ispuValue: number;
 }
 
-// Komponen Card sederhana
+/** Simple Card component (local) */
 function Card({
   children,
   className = "",
@@ -56,7 +56,7 @@ function Card({
       onKeyDown={
         onClick
           ? (e) => {
-              if (e.key === "Enter" || e.key === " ") onClick();
+              if ((e as any).key === "Enter" || (e as any).key === " ") onClick();
             }
           : undefined
       }
@@ -69,112 +69,209 @@ function Card({
   );
 }
 
-// Mapping kategori ISPU
+/** Category helper */
 function categoryOf(v: number) {
   if (v <= 50)
-    return {
-      label: "Baik",
-      dot: "#00B050", // Hijau
-      chip: "bg-green-600 text-white",
-    };
+    return { label: "Baik", dot: "#00B050", chip: "bg-green-600 text-white" };
   if (v <= 100)
-    return {
-      label: "Sedang",
-      dot: "#0000FF", // Biru
-      chip: "bg-blue-600 text-white",
-    };
+    return { label: "Sedang", dot: "#0000FF", chip: "bg-blue-600 text-white" };
   if (v <= 200)
-    return {
-      label: "Tidak Sehat",
-      dot: "#FFFF00", // Kuning
-      chip: "bg-yellow-400 text-black",
-    };
+    return { label: "Tidak Sehat", dot: "#FFFF00", chip: "bg-yellow-400 text-black" };
   if (v <= 300)
-    return {
-      label: "Sangat Tidak Sehat",
-      dot: "#FF0000", // Merah
-      chip: "bg-red-600 text-white",
-    };
-  return {
-    label: "Berbahaya",
-    dot: "#000000", // Hitam
-    chip: "bg-black text-white",
-  };
+    return { label: "Sangat Tidak Sehat", dot: "#FF0000", chip: "bg-red-600 text-white" };
+  return { label: "Berbahaya", dot: "#000000", chip: "bg-black text-white" };
+}
+function getStatusFromISPU(ispuValue: number) {
+  const category = categoryOf(ispuValue);
+  return { status: category.label, statusColor: category.dot, dotColor: category.dot };
 }
 
-// Mapping peringatan
+/** Warnings (text) */
 const warnings: Record<string, string> = {
   "PM₂.₅": "Kadar PM₂.₅ tinggi",
   "NO₂": "Kadar NO₂ tinggi",
   "O₃": "Kadar O₃ tinggi",
-  "CO": "Kadar CO tinggi",
+  CO: "Kadar CO tinggi",
 };
 
-// Tambahkan mapping rekomendasi
-const recommendations: Record<string, string[]> = {
-  "PM₂.₅": [
-    "Kurangi aktivitas luar ruangan dan gunakan masker respirator",
-    "Segera masuk ke ruangan tertutup bila terasa sesak, batuk, atau mata perih",
-    "Tetap terhidrasi untuk membantu tubuh mengurangi efek iritasi.",
-  ],
-  "NO₂": [
-    "Kurangi aktivitas di jalan raya yang padat",
-    "Gunakan masker ketika berpergian",
-    "Segera berpindah ke area dengan sirkulasi udara lebih baik jika mata/paru terasa perih.",
-  ],
-  "O₃": [
-    "Hindari aktivitas luar di siang hingga sore atau sekitar pukul 10.00–16.00 saat O₃ mencapai puncak.",
-    "Bila terpaksa, batasi durasi paparan dan gunakan kacamata pelindung untuk cegah iritasi mata.",
-    "Pilih beraktivitas di pagi atau sore menjelang malam",
-  ],
-  "CO": [
-    "Segera menjauh dari sumber polusi yaitu asap kendaraan, knalpot, kebakaran terbuka",
-    "Jangan berada lama di sekitar area tertutup.",
-    "Jika mulai pusing, mual, atau lemas segera ke area terbuka yang banyak oksigen.",
-  ],
+/** Recommendations (1 icon per status) */
+const detailedRecommendations: Record<
+  string,
+  Record<string, { icon: string; texts: string[] }>
+> = {
+  "PM₂.₅": {
+    Baik: {
+      icon: "happy.png",
+      texts: [
+        "Aktivitas luar ruangan normal.",
+        "Nikmati udara segar hari ini.",
+        "Tetap jaga kebersihan lingkungan sekitar.",
+      ],
+    },
+    Sedang: {
+      icon: "home.png",
+      texts: [
+        "Kelompok sensitif perlu berhati-hati.",
+        "Kurangi aktivitas fisik berat di luar.",
+        "Pantau kualitas udara secara berkala.",
+      ],
+    },
+    "Tidak Sehat": {
+      icon: "mask.png",
+      texts: [
+        "Batasi aktivitas luar ruangan.",
+        "Gunakan masker bila ada gejala sesak.",
+        "Tutup jendela untuk mencegah udara kotor masuk.",
+      ],
+    },
+    "Sangat Tidak Sehat": {
+      icon: "home.png",
+      texts: [
+        "Hindari aktivitas luar ruangan.",
+        "Tetap di dalam dengan udara bersih.",
+        "Gunakan pembersih udara (air purifier) bila memungkinkan.",
+      ],
+    },
+    Berbahaya: {
+      icon: "home.png",
+      texts: [
+        "Jangan keluar rumah sama sekali.",
+        "Segera cari bantuan medis bila perlu.",
+        "Ikuti informasi darurat dari pihak berwenang.",
+      ],
+    },
+  },
+  CO: {
+    Baik: {
+      icon: "happy.png",
+      texts: [
+        "Udara sehat, aman beraktivitas.",
+        "Cocok untuk olahraga luar ruangan.",
+        "Tetap waspadai area dengan lalu lintas padat.",
+      ],
+    },
+    Sedang: {
+      icon: "people.png",
+      texts: [
+        "Kelompok rentan lebih waspada.",
+        "Kurangi aktivitas di area lalu lintas padat.",
+        "Pastikan ventilasi udara di rumah tetap baik.",
+      ],
+    },
+    "Tidak Sehat": {
+      icon: "mask.png",
+      texts: [
+        "Batasi waktu di dekat sumber emisi.",
+        "Gunakan masker karbon aktif jika perlu.",
+        "Hindari area dengan banyak kendaraan bermotor.",
+      ],
+    },
+    "Sangat Tidak Sehat": {
+      icon: "home.png",
+      texts: [
+        "Hindari aktivitas luar ruangan di area padat kendaraan.",
+        "Tetap di dalam dengan ventilasi bersih.",
+        "Gunakan pembersih udara jika tersedia.",
+      ],
+    },
+    Berbahaya: {
+      icon: "home.png",
+      texts: [
+        "Jangan keluar rumah sama sekali.",
+        "Segera cari pertolongan medis bila ada gejala.",
+        "Ikuti panduan evakuasi dari otoritas setempat.",
+      ],
+    },
+  },
+  "O₃": {
+    Baik: {
+      icon: "happy.png",
+      texts: [
+        "Aktivitas luar ruangan normal.",
+        "Udara cukup bersih untuk berolahraga.",
+        "Tetap pantau kualitas udara bila berada di kota besar.",
+      ],
+    },
+    Sedang: {
+      icon: "home.png",
+      texts: [
+        "Kelompok sensitif perlu berhati-hati.",
+        "Kurangi aktivitas fisik berat di luar.",
+        "Hindari paparan sinar matahari langsung terlalu lama.",
+      ],
+    },
+    "Tidak Sehat": {
+      icon: "mask.png",
+      texts: [
+        "Batasi waktu di luar, terutama siang hari.",
+        "Gunakan masker bila ada gejala sesak.",
+        "Tutup jendela rumah untuk mengurangi paparan ozon.",
+      ],
+    },
+    "Sangat Tidak Sehat": {
+      icon: "home.png",
+      texts: [
+        "Hindari aktivitas luar ruangan.",
+        "Gunakan HEPA purifier bila di dalam ruangan.",
+        "Minum air putih lebih banyak untuk menjaga kesehatan paru.",
+      ],
+    },
+    Berbahaya: {
+      icon: "home.png",
+      texts: [
+        "Jangan keluar rumah sama sekali.",
+        "Cari bantuan medis bila mengalami gejala berat.",
+        "Ikuti peringatan darurat dari pihak berwenang.",
+      ],
+    },
+  },
+  "NO₂": {
+    Baik: {
+      icon: "happy.png",
+      texts: [
+        "Aktivitas normal, aman.",
+        "Udara bersih, cocok untuk olahraga ringan.",
+        "Tetap jaga kebersihan udara sekitar.",
+      ],
+    },
+    Sedang: {
+      icon: "people.png",
+      texts: [
+        "Kelompok sensitif kurangi aktivitas di dekat jalan ramai.",
+        "Hindari olahraga di area padat lalu lintas.",
+        "Gunakan masker ringan bila terasa sesak.",
+      ],
+    },
+    "Tidak Sehat": {
+      icon: "mask.png",
+      texts: [
+        "Kurangi paparan lalu lintas.",
+        "Gunakan masker karbon aktif bila perlu.",
+        "Jaga ventilasi rumah tetap bersih dan tertutup.",
+      ],
+    },
+    "Sangat Tidak Sehat": {
+      icon: "home.png",
+      texts: [
+        "Hindari keluar rumah dekat sumber polusi.",
+        "Gunakan respirator dengan filter karbon aktif.",
+        "Tetap di ruangan dengan udara bersih.",
+      ],
+    },
+    Berbahaya: {
+      icon: "home.png",
+      texts: [
+        "Jangan keluar rumah sama sekali.",
+        "Cari tempat aman dengan kualitas udara lebih bersih.",
+        "Segera konsultasikan ke dokter bila ada gejala berat.",
+      ],
+    },
+  },
 };
-
-// Function to calculate ISPU from sensor values
-function calculateISPU(pollutant: string, value: number): number {
-  // Simplified ISPU calculation - you may need to adjust based on actual ISPU formula
-  switch (pollutant) {
-    case "PM₂.₅":
-      return Math.min(300, (value / 35) * 100); // Rough approximation
-    case "CO":
-      return Math.min(300, (value / 30) * 100); // Rough approximation
-    case "O₃":
-      return Math.min(300, (value / 235) * 100); // Rough approximation
-    case "NO2":
-      return Math.min(300, (value / 200) * 100); // Rough approximation
-    default:
-      return 0;
-  }
-}
-
-// Function to get status based on value and pollutant type
-function getStatus(pollutant: string, value: number) {
-  const ispu = calculateISPU(pollutant, value);
-  const category = categoryOf(ispu);
-
-  return {
-    status: category.label,
-    statusColor: category.dot, // warna utk tulisan
-    dotColor: category.dot,    // warna utk dot (penting!)
-  };
-}
-
-  // Mapping kategori → warna teks
-  const colorMap: Record<string, string> = {
-    "Baik": "text-green-500",
-    "Sedang": "text-blue-500",
-    "Tidak Sehat": "text-yellow-500",
-    "Sangat Tidak Sehat": "text-red-500",
-    "Berbahaya": "text-black-500",
-  };
-
 
 export default function AirQualityDashboard() {
   const router = useRouter();
+
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [currentDate, setCurrentDate] = useState("");
   const [currentTime, setCurrentTime] = useState("");
@@ -191,63 +288,67 @@ export default function AirQualityDashboard() {
     { name: "NO₂", value: 0 },
   ]);
 
-  // Fetch sensor data from API
+  // New: background style that changes according to hour
+  const [bgStyle, setBgStyle] = useState("bg-[url('/background.png')] bg-cover bg-center");
+
+  // Fetch sensor data from backend
   const fetchSensorData = async () => {
     try {
-      const response = await fetch("http://localhost:8080/api/sensors/lastest", {
+      const response = await fetch("http://localhost:8080/api/merge/home", {
         method: "GET",
         credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
       });
 
-      if (response.ok) {
-        const data: SensorData = await response.json();
-        setSensorData(data);
-
-        // Update temperature from sensor data
-        setTemperature(`${data.temp} °C`);
-
-        // Update ISPU data
-        const newIspuData = [
-          { name: "PM₂.₅", value: calculateISPU("PM₂.₅", data.pm25) },
-          { name: "CO", value: calculateISPU("CO", data.co) },
-          { name: "O₃", value: calculateISPU("O₃", data.o3) },
-          { name: "NO₂", value: calculateISPU("NO₂", data.no2) },
-        ];
-        setIspuData(newIspuData);
-
-        // Update detailed data
-        const newDetailedData: DetailedDataItem[] = [
-          {
-            name: "PM₂.₅",
-            value: `${data.pm25}`,
-            unit: "µg/m³",
-            ...getStatus("PM₂.₅", data.pm25),
-          },
-          {
-            name: "CO",
-            value: `${data.co}`,
-            unit: "µg/m³",
-            ...getStatus("CO", data.co),
-          },
-          {
-            name: "O₃",
-            value: `${data.o3}`,
-            unit: "µg/m³",
-            ...getStatus("O₃", data.o3),
-          },
-          {
-            name: "NO₂",
-            value: `${data.no2}`,
-            unit: "µg/m³",
-            ...getStatus("NO₂", data.no2),
-          },
-        ];
-
-        setDetailedData(newDetailedData);
+      if (!response.ok) {
+        console.error("Fetch sensor data failed, status:", response.status);
+        return;
       }
+
+      const data: SensorData = await response.json();
+      setSensorData(data);
+      setTemperature(`${data.sensors.temp.value} ${data.sensors.temp.unit}`);
+
+      const newDetailedData: DetailedDataItem[] = [
+        {
+          name: "PM₂.₅",
+          value: `${data.sensors.pm25.value}`,
+          unit: data.sensors.pm25.unit,
+          ispuValue: data.sensors.pm25.ispuValue,
+          ...getStatusFromISPU(data.sensors.pm25.ispuValue),
+        },
+        {
+          name: "CO",
+          value: `${data.sensors.co.value}`,
+          unit: data.sensors.co.unit,
+          ispuValue: data.sensors.co.ispuValue,
+          ...getStatusFromISPU(data.sensors.co.ispuValue),
+        },
+        {
+          name: "O₃",
+          value: `${data.sensors.o3.value}`,
+          unit: data.sensors.o3.unit,
+          ispuValue: data.sensors.o3.ispuValue,
+          ...getStatusFromISPU(data.sensors.o3.ispuValue),
+        },
+        {
+          name: "NO₂",
+          value: `${data.sensors.no2.value}`,
+          unit: data.sensors.no2.unit,
+          ispuValue: data.sensors.no2.ispuValue,
+          ...getStatusFromISPU(data.sensors.no2.ispuValue),
+        },
+      ];
+
+      setDetailedData(newDetailedData);
+
+      const ispuChartData = [
+        { name: "PM₂.₅", value: data.sensors.pm25.ispuValue },
+        { name: "CO", value: data.sensors.co.ispuValue },
+        { name: "O₃", value: data.sensors.o3.ispuValue },
+        { name: "NO₂", value: data.sensors.no2.ispuValue },
+      ];
+      setIspuData(ispuChartData);
     } catch (error) {
       console.error("Error fetching sensor data:", error);
     }
@@ -259,60 +360,86 @@ export default function AirQualityDashboard() {
         const response = await fetch("http://localhost:8080/api/auth/me", {
           method: "GET",
           credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
         });
 
         if (response.ok) {
           const userData = await response.json();
           setIsAuthenticated(true);
-
           const email = userData.email || localStorage.getItem("userEmail");
           setUserEmail(email);
-
+          // Fetch initial sensor data
           await fetchSensorData();
         } else {
           setIsAuthenticated(false);
           localStorage.removeItem("userEmail");
           router.push("/");
-          return;
         }
       } catch (error) {
         console.error("Auth check failed:", error);
         setIsAuthenticated(false);
         localStorage.removeItem("userEmail");
         router.push("/");
-        return;
       } finally {
         setIsLoading(false);
       }
     };
 
     checkAuth();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
 
   useEffect(() => {
-    if (isAuthenticated) {
+    if (!isAuthenticated) return;
+
+    // Set date/time and background immediately
+    const updateTimeAndBg = () => {
       const now = new Date();
-      const tanggal = now.toLocaleDateString("id-ID", {
-        weekday: "long",
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-      });
-      const jam = now.toLocaleTimeString("id-ID", {
-        hour: "2-digit",
-        minute: "2-digit",
-      });
+      setCurrentDate(
+        now.toLocaleDateString("id-ID", {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        })
+      );
+      setCurrentTime(now.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }));
 
-      setCurrentDate(tanggal);
-      setCurrentTime(jam);
+      const hours = now.getHours();
+      // Tentukan waktu (pagi, siang, sore, malam)
+      if (hours >= 5 && hours < 11) {
+        // pagi
+        setBgStyle("bg-[url('/morning.png')] bg-cover bg-center");
+      } else if (hours >= 11 && hours < 16) {
+        // siang
+        setBgStyle("bg-[url('/afternoon.png')] bg-cover bg-center");
+      } else if (hours >= 16 && hours < 18) {
+        // sore
+        setBgStyle("bg-[url('/evening.png')] bg-cover bg-center");
+      } else {
+        // malam
+        setBgStyle("bg-[url('/night.png')] bg-cover bg-center");
+      }
+    };
 
-      const interval = setInterval(fetchSensorData, 30000);
+    // initial call
+    updateTimeAndBg();
 
-      return () => clearInterval(interval);
-    }
+    // interval: update clock & background every 60 seconds
+    const clockInterval = setInterval(() => {
+      updateTimeAndBg();
+    }, 60 * 1000);
+
+    // separate interval: fetch sensor data every 30 seconds (sebelumnya sudah ada)
+    const fetchInterval = setInterval(() => {
+      fetchSensorData();
+    }, 30 * 1000);
+
+    return () => {
+      clearInterval(clockInterval);
+      clearInterval(fetchInterval);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated]);
 
   const handleLogout = async () => {
@@ -334,18 +461,58 @@ export default function AirQualityDashboard() {
       <div className="min-h-screen bg-white font-sans text-black flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-900 mx-auto mb-4"></div>
-          <p className="text-gray-600">Memverifikasi akses...</p>
+          <p className="text-gray-600">Mengambil data...</p>
         </div>
       </div>
     );
   }
 
-  if (!isAuthenticated) {
-    return null;
-  }
+  if (!isAuthenticated) return null;
+
+  // Determine worst pollutant
+  const worstPollutant: DetailedDataItem = (() => {
+    if (!detailedData || detailedData.length === 0) {
+      return {
+        name: "PM₂.₅",
+        value: "0",
+        unit: "µg/m³",
+        status: "Baik",
+        statusColor: categoryOf(0).dot,
+        dotColor: categoryOf(0).dot,
+        ispuValue: 0,
+      } as DetailedDataItem;
+    }
+    const order = ["Baik", "Sedang", "Tidak Sehat", "Sangat Tidak Sehat", "Berbahaya"];
+    return detailedData.reduce((prev, curr) => {
+      const prevIdx = order.indexOf(prev.status);
+      const currIdx = order.indexOf(curr.status);
+      if (currIdx > prevIdx) return curr;
+      if (currIdx === prevIdx && curr.ispuValue > prev.ispuValue) return curr;
+      return prev;
+    }, detailedData[0]);
+  })();
+
+  // Get recommendation object (icon + texts) for the worst pollutant & status
+  const recData = detailedRecommendations[worstPollutant.name]?.[worstPollutant.status];
+
+  const recTexts = recData?.texts ?? [];
+  const recIcon = recData?.icon ?? "/icons/default.png";
+
+  const recsStringList = recTexts; // for compatibility with old code naming
+
+  const pollutantMapping: Record<string, string> = {
+    "PM₂.₅": "PM25",
+    "PM2.5": "PM25",
+    CO: "CO",
+    "O₃": "O3",
+    O3: "O3",
+    "NO₂": "NO2",
+    NO2: "NO2",
+  };
 
   const goToDetail = (polutan: string) => {
-    router.push(`/detailISPU?polutan=${encodeURIComponent(polutan)}`);
+    const apiParam = pollutantMapping[polutan] || polutan;
+    router.push(`/detailISPU?polutan=${encodeURIComponent(apiParam)}`);
   };
 
   return (
@@ -357,7 +524,6 @@ export default function AirQualityDashboard() {
             <h1 className="text-lg font-semibold">Indeks Standar Pencemaran Udara</h1>
           </div>
 
-          {/* Email dropdown */}
           <div className="relative">
             {userEmail && (
               <div className="relative">
@@ -367,9 +533,7 @@ export default function AirQualityDashboard() {
                 >
                   {userEmail}
                   <svg
-                    className={`w-4 h-4 transform transition-transform ${
-                      dropdownOpen ? "rotate-180" : "rotate-0"
-                    }`}
+                    className={`w-4 h-4 transform transition-transform ${dropdownOpen ? "rotate-180" : "rotate-0"}`}
                     fill="none"
                     stroke="currentColor"
                     strokeWidth="2"
@@ -395,19 +559,15 @@ export default function AirQualityDashboard() {
           </div>
         </div>
 
-        {/* Grid 3 kolom 2 baris */}
+        {/* Grid */}
         <div className="grid grid-cols-3 grid-rows-[60px,1fr] gap-4 mb-6">
           {/* Location & Date */}
-          <Card className="relative col-span-2 px-5 py-4 bg-[url('/background.png')] bg-cover bg-center rounded-2xl overflow-hidden">
-            {/* Overlay putih tipis agar teks tetap terbaca */}
+          {/* Note: add bg-transparent so bgStyle overrides the Card's default bg-blue-50 */}
+          <Card className={`relative col-span-2 px-5 py-4 bg-transparent ${bgStyle} rounded-2xl overflow-hidden`}>
             <div className="absolute inset-0 bg-white/40"></div>
-
-            {/* Isi card */}
             <div className="relative flex justify-between items-center h-full text-blue-900">
               <div className="flex flex-col">
-                <span className="font-extrabold">
-                  📍 {sensorData?.loc || "Sleman, Yogyakarta"}
-                </span>
+                <span className="font-extrabold">📍 {sensorData?.location || "Sleman, Yogyakarta"}</span>
                 <span className="flex items-center gap-3 text-xs text-blue-900">
                   <span className="flex items-center gap-1">
                     <Thermometer className="w-4 h-4 text-blue-900" />
@@ -415,7 +575,8 @@ export default function AirQualityDashboard() {
                   </span>
                   <span className="flex items-center gap-1">
                     <Droplets className="w-4 h-4 text-blue-900" />
-                    {sensorData?.hum || "--"}%
+                    {sensorData?.sensors?.hum?.value ?? "--"}
+                    {sensorData?.sensors?.hum?.unit ?? "%"}
                   </span>
                 </span>
               </div>
@@ -427,7 +588,7 @@ export default function AirQualityDashboard() {
             </div>
           </Card>
 
-          {/* Hasil ISPU */}
+          {/* ISPU Summary */}
           <Card className="row-span-2 p-3 bg-gray-50">
             <p className="font-bold text-xm text-center mb-2">Hasil ISPU</p>
             <div className="space-y-2">
@@ -437,77 +598,69 @@ export default function AirQualityDashboard() {
                   <div
                     key={i}
                     onClick={() => goToDetail(row.name)}
-                    className={`flex flex-col items-center justify-center rounded-lg px-2 py-3 text-white cursor-pointer transition 
-                                active:scale-[0.97] hover:scale-[1.02] hover:shadow-lg hover:opacity-90 ${cat.chip}`}
+                    className={`flex flex-col items-center justify-center rounded-lg px-2 py-3 text-white cursor-pointer transition active:scale-[0.97] hover:scale-[1.02] hover:shadow-lg hover:opacity-90 ${cat.chip}`}
                   >
                     <div className="flex items-center justify-center gap-2 w-full">
-                    <p className="text-[15px] font-semibold">{row.name} :</p>
-                    <p className="text-sm font-bold">{Math.round(row.value)}</p>
+                      <p className="text-[15px] font-semibold">{row.name} :</p>
+                      <p className="text-sm font-bold">{Math.round(row.value)}</p>
+                    </div>
                   </div>
-                </div>
                 );
               })}
             </div>
           </Card>
 
-          {/* Container Peringatan + Rekomendasi */}
-         <div className="flex flex-row gap-4 justify-start w-[1000px] mt-4 ml-1">
-            
-            {/* Peringatan */}
+          {/* Warning + Recommendation */}
+          <div className="flex flex-row gap-4 justify-start w-[1000px] mt-4 ml-1">
             <Card className="flex flex-col items-center justify-center bg-red-100 border-l-4 border-red-600 py-4 px-6 w-[200px]">
-              <div className="text-red-600 text-2xl mb-1">⚠️</div>
+              <div className="text-red-600 text-2xl mb-1">⚠</div>
               <p className="font-bold text-red-700 leading-tight">PERINGATAN</p>
-              <p className="text-xs text-center mt-1">Kadar PM₂.₅ tinggi</p>
+              <p className="text-xs text-center mt-1">
+                {worstPollutant.status === "Baik"
+                  ? "Udara dalam kondisi baik"
+                  : worstPollutant.status === "Sedang"
+                  ? "Udara dalam kondisi sedang"
+                  : warnings[worstPollutant.name] || `Kadar ${worstPollutant.name} ${worstPollutant.status.toLowerCase()}`}
+              </p>
             </Card>
 
-            {/* Rekomendasi */}
             <Card className="flex flex-col bg-blue-100 py-4 px-6 w-[650px]">
-            <p className="font-bold mb-2 text-center">Rekomendasi</p>
-
-            {/* Flex row supaya gambar & card putih sejajar */}
-            <div className="flex flex-row items-center gap-3">
-              {/* Gambar di kiri */}
-              <div className="flex-shrink-0">
-                <img src="/image.png" alt="gambar" className="w-12 h-12" />
+              <p className="font-bold mb-2 text-center">Rekomendasi</p>
+              <div className="flex flex-row items-center gap-3">
+                <div className="flex-shrink-0">
+                  <img src={recIcon} alt="icon rekomendasi" className="w-12 h-12" />
+                </div>
+                <Card className="p-4 border-slate-200 bg-white w-full">
+                  <ul className="list-disc list-inside text-xs space-y-1 text-gray-700">
+                    {recsStringList.map((t, i) => (
+                      <li key={i}>{t}</li>
+                    ))}
+                    {recsStringList.length === 0 && <li>Tidak ada rekomendasi tersedia.</li>}
+                  </ul>
+                </Card>
               </div>
-
-              {/* Card isi rekomendasi */}
-              <Card className="p-4 border-slate-200 bg-white w-full">
-                <ul className="list-disc list-inside text-xs space-y-1 text-gray-700">
-                  <li>Kurangi aktivitas luar ruangan dan gunakan masker</li>
-                  <li>Segera masuk ke ruangan tertutup bila terasa sesak, batuk, atau mata perih</li>
-                  <li>Tetap terhidrasi untuk membantu tubuh mengurangi efek iritasi</li>
-                </ul>
-              </Card>
-            </div>
-          </Card>
+            </Card>
           </div>
         </div>
 
-        {/* Data polutan */}
+        {/* Detailed pollutant cards + chart */}
         <div className="grid grid-cols-12 gap-4">
           <div className="col-span-8">
             <Card className="row-span-4 p-10 bg-blue-90">
               <div className="grid grid-cols-2 gap-3">
-                {detailedData.map((item, idx) => {
-                  const cat = categoryOf(parseFloat(item.value));
-                  return (
-                    <Card
+                {detailedData.map((item, idx) => (
+                  <Card
                     key={idx}
                     onClick={() => goToDetail(item.name)}
                     className="p-4 border-slate-200 bg-white hover:bg-slate-200 hover:shadow-md transition cursor-pointer active:scale-[0.99]"
-                    >
+                  >
                     <div className="flex flex-col justify-between h-full">
-                      {/* Baris atas: Nama polutan + Value */}
                       <div className="flex justify-between items-start">
-                        {/* Nama polutan */}
                         <span className="px-2 py-1 rounded-md bg-blue-900 text-white text-[15px] font-semibold">
                           {item.name}
                         </span>
-                        {/* Value */}
                         <p className="text-xl font-bold">{item.value}</p>
                       </div>
-                      {/* Baris bawah: Dot + Status di kiri, Unit di kanan */}
                       <div className="flex justify-between items-center mt-2">
                         <div className="flex items-center gap-2">
                           <Dot color={item.dotColor} />
@@ -518,14 +671,12 @@ export default function AirQualityDashboard() {
                         <p className="text-m text-gray-700">{item.unit}</p>
                       </div>
                     </div>
-                    </Card>
-                  );
-                })}
+                  </Card>
+                ))}
               </div>
             </Card>
           </div>
-          
-          {/* Diagram */}
+
           <Card className="col-span-4 px-5 py-5 bg-slate-100 flex items-center justify-center">
             <ResponsiveContainer width="100%" height={230}>
               <BarChart data={ispuData}>
@@ -534,18 +685,18 @@ export default function AirQualityDashboard() {
                 <YAxis />
                 <Tooltip />
                 <Bar dataKey="value">
-                {ispuData.map((entry, idx) => {
-                  const cat = categoryOf(entry.value);
-                  return (
-                    <Cell
-                      key={`cell-${idx}`}
-                      fill={cat.dot}
-                      className="cursor-pointer transition hover:opacity-80 active:scale-95"
-                      onClick={() => goToDetail(entry.name)}
-                    />
-                  );
-                })}
-              </Bar>
+                  {ispuData.map((entry, idx) => {
+                    const cat = categoryOf(entry.value);
+                    return (
+                      <Cell
+                        key={`cell-${idx}`}
+                        fill={cat.dot}
+                        className="cursor-pointer transition hover:opacity-80 active:scale-95"
+                        onClick={() => goToDetail(entry.name)}
+                      />
+                    );
+                  })}
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </Card>
@@ -555,7 +706,7 @@ export default function AirQualityDashboard() {
   );
 }
 
-// Komponen titik warna kecil
+/** Small Dot component */
 function Dot({ color }: { color: string }) {
   return <span className="inline-block w-3 h-3 rounded-full" style={{ backgroundColor: color }} />;
 }
