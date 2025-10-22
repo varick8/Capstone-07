@@ -29,15 +29,6 @@ function Card({
   );
 }
 
-// Helper format tanggal dan waktu
-function formatDayAndDate(date: Date) {
-  const hari = date.toLocaleDateString("id-ID", { weekday: "long" });
-  const tanggal = date.toLocaleDateString("id-ID", {
-    day: "numeric",
-    month: "long",
-  });
-  return `${hari}, ${tanggal}`;
-}
 function formatTanggalIndonesia(date: Date) {
   return new Intl.DateTimeFormat("id-ID", {
     weekday: "long",
@@ -229,13 +220,19 @@ function getPollutantInfo(
   };
 }
 
+interface HistoricalData {
+  date: string;
+  value: number;
+}
+
 interface SensorDetailResponse {
   name: string;
-  sensorValue: number;
+  sensorValue: string | number;
   ispuValue: number;
   dateTime: string;
   location: string;
   unit: string;
+  historical: HistoricalData[];
 }
 
 export default function AirQualityDetailPage() {
@@ -255,14 +252,6 @@ export default function AirQualityDetailPage() {
   const [currentCategory, setCurrentCategory] = useState<string>("");
 
   const windowSize = 7;
-
-  useEffect(() => {
-    const email = localStorage.getItem("userEmail");
-    setUserEmail(email);
-    const now = new Date();
-    setTanggal(formatTanggalIndonesia(now));
-    setJam(formatJamMenit(now));
-  }, []);
 
   // Normalisasi nama polutan
   const canonicalPollutant = (raw: string | null | undefined) => {
@@ -294,9 +283,26 @@ export default function AirQualityDetailPage() {
         const cat = categoryOf(data.ispuValue);
         setCurrentCategory(cat.label);
 
+        // Update date and time from API response
         const apiDate = new Date(data.dateTime);
         setTanggal(formatTanggalIndonesia(apiDate));
         setJam(formatJamMenit(apiDate));
+
+        // Process historical data from API
+        if (data.historical && data.historical.length > 0) {
+          const processedHistory = data.historical.map((item) => {
+            const itemDate = new Date(item.date);
+            return {
+              date: formatTanggalIndonesia(itemDate),
+              dateShort: itemDate.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }),
+              value: item.value,
+            };
+          });
+          setHistoryData(processedHistory);
+          // Set startIndex to show the most recent data
+          const maxStart = Math.max(0, processedHistory.length - windowSize);
+          setStartIndex(maxStart);
+        }
       } else console.error("Gagal fetch sensor detail");
     } catch (e) {
       console.error("Error fetching detail:", e);
@@ -327,22 +333,6 @@ export default function AirQualityDetailPage() {
           setCurrentPollutant(normalized);
           await fetchSensorDetail(normalized.toLowerCase());
         }
-
-        // generate dummy history
-        const today = new Date();
-        const days = 14;
-        const generated = Array.from({ length: days }).map((_, i) => {
-          const d = new Date(today);
-          d.setDate(today.getDate() - (days - 1 - i));
-          return {
-            date: formatDayAndDate(d),
-            PM25: Math.round(60 + Math.random() * 80),
-            CO: Math.round((1 + Math.random() * 3) * 10) / 10,
-            NO2: Math.round(20 + Math.random() * 40),
-            O3: Math.round(30 + Math.random() * 40),
-          };
-        });
-        setHistoryData(generated);
       } catch {
         setIsAuthenticated(false);
         router.push("/");
@@ -368,7 +358,10 @@ export default function AirQualityDetailPage() {
 
     const cat = categoryOf(sensorDetail.ispuValue);
     const label = currentCategory || cat.label;
-    const info = getPollutantInfo(sensorDetail.name, label, sensorDetail.sensorValue, sensorDetail.unit, sensorDetail.ispuValue);
+    const sensorValueNum = typeof sensorDetail.sensorValue === 'string' 
+      ? parseFloat(sensorDetail.sensorValue) 
+      : sensorDetail.sensorValue;
+    const info = getPollutantInfo(sensorDetail.name, label, sensorValueNum, sensorDetail.unit, sensorDetail.ispuValue);
 
     return {
       name: info.fullName,
@@ -384,12 +377,16 @@ export default function AirQualityDetailPage() {
   const pollutant = getPollutantData();
   const visibleData = historyData.slice(startIndex, startIndex + windowSize);
 
-  if (isLoading || dataLoading)
+  if (isLoading) {
     return (
-      <div className="h-screen flex items-center justify-center">
-        <p>Mengambil data...</p>
+      <div className="min-h-screen bg-white font-sans text-black flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-900 mx-auto mb-4"></div>
+          <p className="text-gray-600">Mengambil data...</p>
+        </div>
       </div>
     );
+  }
   if (!isAuthenticated) return null;
   
   // Fungsi navigasi untuk diagram
@@ -495,45 +492,79 @@ export default function AirQualityDetailPage() {
           </Card>
         </div>
 
-        {/* Diagram History ISPU (MENAMPILKAN SEMUA POLUTAN) */}
+        {/* Diagram History ISPU */}
         <Card className="p-6 h-[400px] bg-slate-100 relative">
-          {/* Tombol navigasi */}
-          <button
-            onClick={handlePrev}
-            disabled={startIndex === 0}
-            className="absolute left-2 top-1/2 -translate-y-1/2 bg-white shadow-md rounded-full p-2 hover:bg-gray-100 disabled:opacity-40"
-          >
-            <ChevronLeft size={20} />
-          </button>
-          <button
-            onClick={handleNext}
-            disabled={startIndex + windowSize >= historyData.length}
-            className="absolute right-2 top-1/2 -translate-y-1/2 bg-white shadow-md rounded-full p-2 hover:bg-gray-100 disabled:opacity-40"
-          >
-            <ChevronRight size={20} />
-          </button>
+          {dataLoading ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-900 mx-auto mb-4"></div>
+                <p className="text-gray-600">Memuat data historis...</p>
+              </div>
+            </div>
+          ) : historyData.length === 0 ? (
+            <div className="flex items-center justify-center h-full">
+              <p className="text-gray-500">Tidak ada data historis tersedia</p>
+            </div>
+          ) : (
+            <>
+              {/* Tombol navigasi */}
+              <button
+                onClick={handlePrev}
+                disabled={startIndex === 0}
+                className="absolute left-2 top-1/2 -translate-y-1/2 bg-white shadow-md rounded-full p-2 hover:bg-gray-100 disabled:opacity-40 z-10"
+              >
+                <ChevronLeft size={20} />
+              </button>
+              <button
+                onClick={handleNext}
+                disabled={startIndex + windowSize >= historyData.length}
+                className="absolute right-2 top-1/2 -translate-y-1/2 bg-white shadow-md rounded-full p-2 hover:bg-gray-100 disabled:opacity-40 z-10"
+              >
+                <ChevronRight size={20} />
+              </button>
 
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={visibleData} margin={{ top: 20, right: 30, left: 0, bottom: 30 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#d1d5db" />
-              <XAxis dataKey="date" angle={-20} textAnchor="end" height={60} tick={{ fontSize: 12 }} />
-              <YAxis tick={{ fontSize: 12 }} />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "#f9fafb",
-                  border: "1px solid #e5e7eb",
-                  borderRadius: "8px",
-                }}
-              />
-              <Legend wrapperStyle={{ fontSize: "12px" }} />
-
-              {/* 4 lines for all pollutants */}
-              <Line type="monotone" dataKey="PM25" stroke="#ef4444" name="PM₂.₅" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 6 }} />
-              <Line type="monotone" dataKey="CO" stroke="#0ea5e9" name="CO" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 6 }} />
-              <Line type="monotone" dataKey="O3" stroke="#10b981" name="O₃" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 6 }} />
-              <Line type="monotone" dataKey="NO2" stroke="#f59e0b" name="NO₂" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 6 }} />
-            </LineChart>
-          </ResponsiveContainer>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={visibleData}
+                  margin={{ top: 50, right: 60, left: 20, bottom: 20 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#d1d5db" />
+                  <XAxis
+                    dataKey="dateShort"
+                    tick={{ fontSize: 12 }}
+                  />
+                  <YAxis tick={{ fontSize: 12 }} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "#f9fafb",
+                      border: "1px solid #e5e7eb",
+                      borderRadius: "8px",
+                    }}
+                    labelFormatter={(label, payload) => {
+                      if (payload && payload.length > 0) {
+                        return payload[0].payload.date;
+                      }
+                      return label;
+                    }}
+                  />
+                  <Legend wrapperStyle={{ fontSize: "12px" }} />
+                  <Line
+                    type="monotone"
+                    dataKey="value"
+                    stroke={currentPollutant === 'PM25' ? '#3b82f6' :
+                           currentPollutant === 'CO' ? '#ef4444' :
+                           currentPollutant === 'NO2' ? '#f97316' : '#22c55e'}
+                    name={currentPollutant === 'PM25' ? 'PM₂.₅' :
+                          currentPollutant === 'CO' ? 'CO' :
+                          currentPollutant === 'NO2' ? 'NO₂' : 'O₃'}
+                    strokeWidth={2}
+                    dot={{ r: 3 }}
+                    activeDot={{ r: 6 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </>
+          )}
         </Card>
       </div>
     </div>

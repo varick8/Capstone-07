@@ -288,7 +288,7 @@ export default function AirQualityDashboard() {
     { name: "NO₂", value: 0 },
   ]);
 
-  // New: background style that changes according to hour
+  // Background style that changes according to hour
   const [bgStyle, setBgStyle] = useState("bg-[url('/background.png')] bg-cover bg-center");
 
   // Fetch sensor data from backend
@@ -308,6 +308,32 @@ export default function AirQualityDashboard() {
       const data: SensorData = await response.json();
       setSensorData(data);
       setTemperature(`${data.sensors.temp.value} ${data.sensors.temp.unit}`);
+
+      // Update date and time from API response
+      if (data.dateTime) {
+        const apiDate = new Date(data.dateTime);
+        setCurrentDate(
+          apiDate.toLocaleDateString("id-ID", {
+            weekday: "long",
+            day: "numeric",
+            month: "long",
+            year: "numeric",
+          })
+        );
+        setCurrentTime(apiDate.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }));
+
+        // Update background based on API time
+        const hours = apiDate.getHours();
+        if (hours >= 5 && hours < 11) {
+          setBgStyle("bg-[url('/morning.png')] bg-cover bg-center");
+        } else if (hours >= 11 && hours < 16) {
+          setBgStyle("bg-[url('/afternoon.png')] bg-cover bg-center");
+        } else if (hours >= 16 && hours < 18) {
+          setBgStyle("bg-[url('/evening.png')] bg-cover bg-center");
+        } else {
+          setBgStyle("bg-[url('/night.png')] bg-cover bg-center");
+        }
+      }
 
       const newDetailedData: DetailedDataItem[] = [
         {
@@ -392,51 +418,13 @@ export default function AirQualityDashboard() {
   useEffect(() => {
     if (!isAuthenticated) return;
 
-    // Set date/time and background immediately
-    const updateTimeAndBg = () => {
-      const now = new Date();
-      setCurrentDate(
-        now.toLocaleDateString("id-ID", {
-          weekday: "long",
-          day: "numeric",
-          month: "long",
-          year: "numeric",
-        })
-      );
-      setCurrentTime(now.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }));
-
-      const hours = now.getHours();
-      // Tentukan waktu (pagi, siang, sore, malam)
-      if (hours >= 5 && hours < 11) {
-        // pagi
-        setBgStyle("bg-[url('/morning.png')] bg-cover bg-center");
-      } else if (hours >= 11 && hours < 16) {
-        // siang
-        setBgStyle("bg-[url('/afternoon.png')] bg-cover bg-center");
-      } else if (hours >= 16 && hours < 18) {
-        // sore
-        setBgStyle("bg-[url('/evening.png')] bg-cover bg-center");
-      } else {
-        // malam
-        setBgStyle("bg-[url('/night.png')] bg-cover bg-center");
-      }
-    };
-
-    // initial call
-    updateTimeAndBg();
-
-    // interval: update clock & background every 60 seconds
-    const clockInterval = setInterval(() => {
-      updateTimeAndBg();
-    }, 60 * 1000);
-
-    // separate interval: fetch sensor data every 30 seconds (sebelumnya sudah ada)
+    // Fetch sensor data every 30 seconds
+    // Date, time, and background are now updated by fetchSensorData
     const fetchInterval = setInterval(() => {
       fetchSensorData();
     }, 30 * 1000);
 
     return () => {
-      clearInterval(clockInterval);
       clearInterval(fetchInterval);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps

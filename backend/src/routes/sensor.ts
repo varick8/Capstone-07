@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getSensors, createSensor, getLatestSensor } from "../controllers/sensor";
+import { getSensors, getLatestSensor } from "../controllers/sensor";
 
 const sensorRouter = Router();
 
@@ -10,6 +10,6 @@ const asyncHandler = (fn: any) => (req: any, res: any, next: any) => {
 
 sensorRouter.get("/", asyncHandler(getSensors));
 sensorRouter.get("/lastest", asyncHandler(getLatestSensor));
-sensorRouter.post("/", asyncHandler(createSensor));
+// sensorRouter.post("/", asyncHandler(createSensor));
 
 export default sensorRouter;
