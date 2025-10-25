@@ -556,15 +556,11 @@ export default function AirQualityDashboard() {
         {/* Grid */}
         <div className="grid grid-cols-3 grid-rows-[60px,1fr] gap-4 mb-6">
           {/* Location & Date */}
-          {/* Note: add bg-transparent so bgStyle overrides the Card's default bg-blue-50 */}
           <Card
-        className={`relative col-span-2 px-5 py-4 ${bgStyle} rounded-2xl overflow-hidden transition-all duration-700 ease-in-out`}
-      >
-        {/* Gradient dinamis */}
+        className={`relative col-span-2 px-5 py-4 ${bgStyle} rounded-2xl overflow-hidden transition-all duration-700 ease-in-out`}>
         <div
           className={`absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t ${gradientStyle} pointer-events-none rounded-b-2xl`}
         ></div>
-
         <div className="relative flex justify-between items-center h-full text-white drop-shadow-md">
           <div className="flex flex-col">
             <span className="font-extrabold">
