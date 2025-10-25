@@ -290,6 +290,7 @@ export default function AirQualityDashboard() {
 
   // Background style that changes according to hour
   const [bgStyle, setBgStyle] = useState("bg-[url('/background.png')] bg-cover bg-center");
+  const [gradientStyle, setGradientStyle] = useState("");
 
   // Fetch sensor data from backend
   const fetchSensorData = async () => {
@@ -325,14 +326,19 @@ export default function AirQualityDashboard() {
         // Update background based on API time
         const hours = apiDate.getHours();
         if (hours >= 5 && hours < 11) {
-          setBgStyle("bg-[url('/morning.png')] bg-cover bg-center");
-        } else if (hours >= 11 && hours < 16) {
-          setBgStyle("bg-[url('/afternoon.png')] bg-cover bg-center");
-        } else if (hours >= 16 && hours < 18) {
-          setBgStyle("bg-[url('/evening.png')] bg-cover bg-center");
-        } else {
-          setBgStyle("bg-[url('/night.png')] bg-cover bg-center");
-        }
+      setBgStyle("bg-[url('/morning.png')] bg-cover bg-center bg-no-repeat");
+      setGradientStyle("from-black/40 to-transparent");
+    } else if (hours >= 11 && hours < 16) {
+      setBgStyle("bg-[url('/afternoon.png')] bg-cover bg-center bg-no-repeat");
+      setGradientStyle("from-black/30 to-transparent");
+    } else if (hours >= 16 && hours < 18) {
+      setBgStyle("bg-[url('/evening.png')] bg-cover bg-center bg-no-repeat");
+      setGradientStyle("from-black/35 to-transparent");
+    } else {
+      setBgStyle("bg-[url('/night.png')] bg-cover bg-center bg-no-repeat");
+      setGradientStyle("from-black/15 to-transparent");
+    }
+
       }
 
       const newDetailedData: DetailedDataItem[] = [
@@ -551,30 +557,38 @@ export default function AirQualityDashboard() {
         <div className="grid grid-cols-3 grid-rows-[60px,1fr] gap-4 mb-6">
           {/* Location & Date */}
           {/* Note: add bg-transparent so bgStyle overrides the Card's default bg-blue-50 */}
-          <Card className={`relative col-span-2 px-5 py-4 bg-transparent ${bgStyle} rounded-2xl overflow-hidden`}>
-            <div className="absolute inset-0 bg-white/40"></div>
-            <div className="relative flex justify-between items-center h-full text-blue-900">
-              <div className="flex flex-col">
-                <span className="font-extrabold">📍 {sensorData?.location || "Sleman, Yogyakarta"}</span>
-                <span className="flex items-center gap-3 text-xs text-blue-900">
-                  <span className="flex items-center gap-1">
-                    <Thermometer className="w-4 h-4 text-blue-900" />
-                    {temperature}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Droplets className="w-4 h-4 text-blue-900" />
-                    {sensorData?.sensors?.hum?.value ?? "--"}
-                    {sensorData?.sensors?.hum?.unit ?? "%"}
-                  </span>
-                </span>
-              </div>
+          <Card
+        className={`relative col-span-2 px-5 py-4 ${bgStyle} rounded-2xl overflow-hidden transition-all duration-700 ease-in-out`}
+      >
+        {/* Gradient dinamis */}
+        <div
+          className={`absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t ${gradientStyle} pointer-events-none rounded-b-2xl`}
+        ></div>
 
-              <div className="text-right text-sm">
-                <p className="font-extrabold">{currentDate}</p>
-                <p className="font-extrabold">{currentTime}</p>
-              </div>
-            </div>
-          </Card>
+        <div className="relative flex justify-between items-center h-full text-white drop-shadow-md">
+          <div className="flex flex-col">
+            <span className="font-extrabold">
+              📍 {sensorData?.location || "Sleman, Yogyakarta"}
+            </span>
+            <span className="flex items-center gap-3 text-xs">
+              <span className="flex items-center gap-1">
+                <Thermometer className="w-4 h-4 text-white" />
+                {temperature}
+              </span>
+              <span className="flex items-center gap-1">
+                <Droplets className="w-4 h-4 text-white" />
+                {sensorData?.sensors?.hum?.value ?? "--"}
+                {sensorData?.sensors?.hum?.unit ?? "%"}
+              </span>
+            </span>
+          </div>
+
+          <div className="text-right text-sm">
+            <p className="font-extrabold">{currentDate}</p>
+            <p className="font-extrabold">{currentTime}</p>
+          </div>
+        </div>
+      </Card>
 
           {/* ISPU Summary */}
           <Card className="row-span-2 p-3 bg-gray-50">
