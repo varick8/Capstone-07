@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { IoArrowBack } from "react-icons/io5";
 import { ChevronLeft, ChevronRight, LogOut } from "lucide-react";
@@ -235,7 +235,7 @@ interface SensorDetailResponse {
   historical: HistoricalData[];
 }
 
-export default function AirQualityDetailPage() {
+function AirQualityDetailPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [userEmail, setUserEmail] = useState<string | null>(null);
@@ -243,7 +243,7 @@ export default function AirQualityDetailPage() {
   const [jam, setJam] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [historyData, setHistoryData] = useState<any[]>([]);
+  const [historyData, setHistoryData] = useState<Array<{ date: string; dateShort: string; value: number }>>([]);
   const [startIndex, setStartIndex] = useState(0);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [sensorDetail, setSensorDetail] = useState<SensorDetailResponse | null>(null);
@@ -341,6 +341,7 @@ export default function AirQualityDetailPage() {
       }
     };
     checkAuth();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router, searchParams]);
 
   // Data polutan
@@ -582,5 +583,20 @@ export default function AirQualityDetailPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+export default function AirQualityDetailPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-white font-sans text-black flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-900 mx-auto mb-4"></div>
+          <p className="text-gray-600">Mengambil data...</p>
+        </div>
+      </div>
+    }>
+      <AirQualityDetailPageContent />
+    </Suspense>
   );
 }

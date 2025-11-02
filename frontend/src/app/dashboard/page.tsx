@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { LogOut, Thermometer, Droplets } from "lucide-react";
 import {
   BarChart,
@@ -55,8 +56,8 @@ function Card({
       onClick={onClick}
       onKeyDown={
         onClick
-          ? (e) => {
-              if ((e as any).key === "Enter" || (e as any).key === " ") onClick();
+          ? (e: React.KeyboardEvent<HTMLDivElement>) => {
+              if (e.key === "Enter" || e.key === " ") onClick();
             }
           : undefined
       }
@@ -101,7 +102,7 @@ const detailedRecommendations: Record<
 > = {
   "PM₂.₅": {
     Baik: {
-      icon: "happy.png",
+      icon: "/happy.png",
       texts: [
         "Aktivitas luar ruangan normal.",
         "Nikmati udara segar hari ini.",
@@ -109,7 +110,7 @@ const detailedRecommendations: Record<
       ],
     },
     Sedang: {
-      icon: "home.png",
+      icon: "/home.png",
       texts: [
         "Kelompok sensitif perlu berhati-hati.",
         "Kurangi aktivitas fisik berat di luar.",
@@ -117,7 +118,7 @@ const detailedRecommendations: Record<
       ],
     },
     "Tidak Sehat": {
-      icon: "mask.png",
+      icon: "/mask.png",
       texts: [
         "Batasi aktivitas luar ruangan.",
         "Gunakan masker bila ada gejala sesak.",
@@ -125,7 +126,7 @@ const detailedRecommendations: Record<
       ],
     },
     "Sangat Tidak Sehat": {
-      icon: "home.png",
+      icon: "/home.png",
       texts: [
         "Hindari aktivitas luar ruangan.",
         "Tetap di dalam dengan udara bersih.",
@@ -133,7 +134,7 @@ const detailedRecommendations: Record<
       ],
     },
     Berbahaya: {
-      icon: "home.png",
+      icon: "/home.png",
       texts: [
         "Jangan keluar rumah sama sekali.",
         "Segera cari bantuan medis bila perlu.",
@@ -143,7 +144,7 @@ const detailedRecommendations: Record<
   },
   CO: {
     Baik: {
-      icon: "happy.png",
+      icon: "/happy.png",
       texts: [
         "Udara sehat, aman beraktivitas.",
         "Cocok untuk olahraga luar ruangan.",
@@ -151,7 +152,7 @@ const detailedRecommendations: Record<
       ],
     },
     Sedang: {
-      icon: "people.png",
+      icon: "/people.png",
       texts: [
         "Kelompok rentan lebih waspada.",
         "Kurangi aktivitas di area lalu lintas padat.",
@@ -159,7 +160,7 @@ const detailedRecommendations: Record<
       ],
     },
     "Tidak Sehat": {
-      icon: "mask.png",
+      icon: "/mask.png",
       texts: [
         "Batasi waktu di dekat sumber emisi.",
         "Gunakan masker karbon aktif jika perlu.",
@@ -167,7 +168,7 @@ const detailedRecommendations: Record<
       ],
     },
     "Sangat Tidak Sehat": {
-      icon: "home.png",
+      icon: "/home.png",
       texts: [
         "Hindari aktivitas luar ruangan di area padat kendaraan.",
         "Tetap di dalam dengan ventilasi bersih.",
@@ -175,7 +176,7 @@ const detailedRecommendations: Record<
       ],
     },
     Berbahaya: {
-      icon: "home.png",
+      icon: "/home.png",
       texts: [
         "Jangan keluar rumah sama sekali.",
         "Segera cari pertolongan medis bila ada gejala.",
@@ -185,7 +186,7 @@ const detailedRecommendations: Record<
   },
   "O₃": {
     Baik: {
-      icon: "happy.png",
+      icon: "/happy.png",
       texts: [
         "Aktivitas luar ruangan normal.",
         "Udara cukup bersih untuk berolahraga.",
@@ -193,7 +194,7 @@ const detailedRecommendations: Record<
       ],
     },
     Sedang: {
-      icon: "home.png",
+      icon: "/home.png",
       texts: [
         "Kelompok sensitif perlu berhati-hati.",
         "Kurangi aktivitas fisik berat di luar.",
@@ -201,7 +202,7 @@ const detailedRecommendations: Record<
       ],
     },
     "Tidak Sehat": {
-      icon: "mask.png",
+      icon: "/mask.png",
       texts: [
         "Batasi waktu di luar, terutama siang hari.",
         "Gunakan masker bila ada gejala sesak.",
@@ -209,7 +210,7 @@ const detailedRecommendations: Record<
       ],
     },
     "Sangat Tidak Sehat": {
-      icon: "home.png",
+      icon: "/home.png",
       texts: [
         "Hindari aktivitas luar ruangan.",
         "Gunakan HEPA purifier bila di dalam ruangan.",
@@ -217,7 +218,7 @@ const detailedRecommendations: Record<
       ],
     },
     Berbahaya: {
-      icon: "home.png",
+      icon: "/home.png",
       texts: [
         "Jangan keluar rumah sama sekali.",
         "Cari bantuan medis bila mengalami gejala berat.",
@@ -227,7 +228,7 @@ const detailedRecommendations: Record<
   },
   "NO₂": {
     Baik: {
-      icon: "happy.png",
+      icon: "/happy.png",
       texts: [
         "Aktivitas normal, aman.",
         "Udara bersih, cocok untuk olahraga ringan.",
@@ -235,7 +236,7 @@ const detailedRecommendations: Record<
       ],
     },
     Sedang: {
-      icon: "people.png",
+      icon: "/people.png",
       texts: [
         "Kelompok sensitif kurangi aktivitas di dekat jalan ramai.",
         "Hindari olahraga di area padat lalu lintas.",
@@ -243,7 +244,7 @@ const detailedRecommendations: Record<
       ],
     },
     "Tidak Sehat": {
-      icon: "mask.png",
+      icon: "/mask.png",
       texts: [
         "Kurangi paparan lalu lintas.",
         "Gunakan masker karbon aktif bila perlu.",
@@ -251,7 +252,7 @@ const detailedRecommendations: Record<
       ],
     },
     "Sangat Tidak Sehat": {
-      icon: "home.png",
+      icon: "/home.png",
       texts: [
         "Hindari keluar rumah dekat sumber polusi.",
         "Gunakan respirator dengan filter karbon aktif.",
@@ -259,7 +260,7 @@ const detailedRecommendations: Record<
       ],
     },
     Berbahaya: {
-      icon: "home.png",
+      icon: "/home.png",
       texts: [
         "Jangan keluar rumah sama sekali.",
         "Cari tempat aman dengan kualitas udara lebih bersih.",
@@ -418,7 +419,6 @@ export default function AirQualityDashboard() {
     };
 
     checkAuth();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
 
   useEffect(() => {
@@ -433,7 +433,6 @@ export default function AirQualityDashboard() {
     return () => {
       clearInterval(fetchInterval);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated]);
 
   const handleLogout = async () => {
@@ -490,7 +489,7 @@ export default function AirQualityDashboard() {
   const recData = detailedRecommendations[worstPollutant.name]?.[worstPollutant.status];
 
   const recTexts = recData?.texts ?? [];
-  const recIcon = recData?.icon ?? "/icons/default.png";
+  const recIcon = recData?.icon ?? "/happy.png";
 
   const recsStringList = recTexts; // for compatibility with old code naming
 
@@ -626,7 +625,7 @@ export default function AirQualityDashboard() {
               <p className="font-bold mb-2 text-center">Rekomendasi</p>
               <div className="flex flex-row items-center gap-3">
                 <div className="flex-shrink-0">
-                  <img src={recIcon} alt="icon rekomendasi" className="w-12 h-12" />
+                  <Image src={recIcon} alt="icon rekomendasi" width={48} height={48} className="w-12 h-12" />
                 </div>
                 <Card className="p-4 border-slate-200 bg-white w-full">
                   <ul className="list-disc list-inside text-xs space-y-1 text-gray-700">
