@@ -376,6 +376,20 @@ export default function AirQualityDetailPage() {
 
   const pollutant = getPollutantData();
   const visibleData = historyData.slice(startIndex, startIndex + windowSize);
+  useEffect(() => {
+      if (!isAuthenticated) return;
+  
+      // Fetch sensor data every 30 seconds
+      // Date, time, and background are now updated by fetchSensorData
+      const fetchInterval = setInterval(() => {
+        fetchSensorDetail(currentPollutant.toLowerCase());
+      }, 60 * 1000);
+  
+      return () => {
+        clearInterval(fetchInterval);
+      };
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated]);
 
   if (isLoading) {
     return (

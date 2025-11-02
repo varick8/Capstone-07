@@ -428,7 +428,7 @@ export default function AirQualityDashboard() {
     // Date, time, and background are now updated by fetchSensorData
     const fetchInterval = setInterval(() => {
       fetchSensorData();
-    }, 30 * 1000);
+    }, 60 * 1000);
 
     return () => {
       clearInterval(fetchInterval);
@@ -563,15 +563,15 @@ export default function AirQualityDashboard() {
         ></div>
         <div className="relative flex justify-between items-center h-full text-white drop-shadow-md">
           <div className="flex flex-col">
-            <span className="font-extrabold">
+            <span className="font-extrabold text-blue-900">
               📍 {sensorData?.location || "Sleman, Yogyakarta"}
             </span>
-            <span className="flex items-center gap-3 text-xs">
+            <span className="flex items-center gap-3 text-xs text-blue-900">
               <span className="flex items-center gap-1">
                 <Thermometer className="w-4 h-4 text-white" />
                 {temperature}
               </span>
-              <span className="flex items-center gap-1">
+              <span className="flex items-center gap-1 text-blue-900">
                 <Droplets className="w-4 h-4 text-white" />
                 {sensorData?.sensors?.hum?.value ?? "--"}
                 {sensorData?.sensors?.hum?.unit ?? "%"}
@@ -580,8 +580,8 @@ export default function AirQualityDashboard() {
           </div>
 
           <div className="text-right text-sm">
-            <p className="font-extrabold">{currentDate}</p>
-            <p className="font-extrabold">{currentTime}</p>
+            <p className="font-extrabold text-blue-900">{currentDate}</p>
+            <p className="font-extrabold text-blue-900">{currentTime}</p>
           </div>
         </div>
       </Card>
