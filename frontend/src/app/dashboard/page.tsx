@@ -510,23 +510,23 @@ export default function AirQualityDashboard() {
 
   return (
     <div className="min-h-screen bg-white font-sans text-black ">
-      <div className="max-w-[1500px] mx-auto p-5">
+      <div className="max-w-[1500px] mx-auto p-3 sm:p-5">
         {/* Header */}
-        <div className="flex justify-between items-start bg-blue-900 text-white rounded-2xl px-5 py-4 mb-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-blue-900 text-white rounded-2xl px-4 sm:px-5 py-3 sm:py-4 mb-4 sm:mb-6 gap-3 sm:gap-0">
           <div>
-            <h1 className="text-lg font-semibold">Indeks Standar Pencemaran Udara</h1>
+            <h1 className="text-base sm:text-lg font-semibold">Indeks Standar Pencemaran Udara</h1>
           </div>
 
-          <div className="relative">
+          <div className="relative w-full sm:w-auto">
             {userEmail && (
               <div className="relative">
                 <button
                   onClick={() => setDropdownOpen((prev) => !prev)}
-                  className="flex items-center gap-1 text-sm font-medium px-3 py-1 rounded-lg hover:bg-blue-700 transition"
+                  className="flex items-center gap-1 text-xs sm:text-sm font-medium px-3 py-1 rounded-lg hover:bg-blue-700 transition w-full sm:w-auto justify-between sm:justify-start"
                 >
-                  {userEmail}
+                  <span className="truncate max-w-[200px]">{userEmail}</span>
                   <svg
-                    className={`w-4 h-4 transform transition-transform ${dropdownOpen ? "rotate-180" : "rotate-0"}`}
+                    className={`w-4 h-4 transform transition-transform flex-shrink-0 ${dropdownOpen ? "rotate-180" : "rotate-0"}`}
                     fill="none"
                     stroke="currentColor"
                     strokeWidth="2"
@@ -553,32 +553,32 @@ export default function AirQualityDashboard() {
         </div>
 
         {/* Grid */}
-        <div className="grid grid-cols-3 grid-rows-[60px,1fr] gap-4 mb-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4 sm:mb-6">
           {/* Location & Date */}
           <Card
-        className={`relative col-span-2 px-5 py-4 ${bgStyle} rounded-2xl overflow-hidden transition-all duration-700 ease-in-out`}>
+        className={`relative lg:col-span-2 px-4 sm:px-5 py-3 sm:py-4 ${bgStyle} rounded-2xl overflow-hidden transition-all duration-700 ease-in-out min-h-[120px] sm:min-h-[80px]`}>
         <div
           className={`absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t ${gradientStyle} pointer-events-none rounded-b-2xl`}
         ></div>
-        <div className="relative flex justify-between items-center h-full text-white drop-shadow-md">
+        <div className="relative flex flex-col sm:flex-row justify-between items-start sm:items-center h-full text-white drop-shadow-md gap-2 sm:gap-0">
           <div className="flex flex-col">
-            <span className="font-extrabold text-blue-900">
+            <span className="font-extrabold text-blue-900 text-sm sm:text-base">
               📍 {sensorData?.location || "Sleman, Yogyakarta"}
             </span>
-            <span className="flex items-center gap-3 text-xs text-blue-900">
+            <span className="flex items-center gap-2 sm:gap-3 text-xs text-blue-900">
               <span className="flex items-center gap-1">
-                <Thermometer className="w-4 h-4 text-white" />
+                <Thermometer className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
                 {temperature}
               </span>
               <span className="flex items-center gap-1 text-blue-900">
-                <Droplets className="w-4 h-4 text-white" />
+                <Droplets className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
                 {sensorData?.sensors?.hum?.value ?? "--"}
                 {sensorData?.sensors?.hum?.unit ?? "%"}
               </span>
             </span>
           </div>
 
-          <div className="text-right text-sm">
+          <div className="text-left sm:text-right text-xs sm:text-sm">
             <p className="font-extrabold text-blue-900">{currentDate}</p>
             <p className="font-extrabold text-blue-900">{currentTime}</p>
           </div>
@@ -586,8 +586,8 @@ export default function AirQualityDashboard() {
       </Card>
 
           {/* ISPU Summary */}
-          <Card className="row-span-2 p-3 bg-gray-50">
-            <p className="font-bold text-xm text-center mb-2">Hasil ISPU</p>
+          <Card className="p-3 bg-slate-100 lg:row-span-2">
+            <p className="font-bold text-sm sm:text-base text-center mb-2">Hasil ISPU</p>
             <div className="space-y-2">
               {ispuData.map((row, i) => {
                 const cat = categoryOf(row.value);
@@ -595,10 +595,10 @@ export default function AirQualityDashboard() {
                   <div
                     key={i}
                     onClick={() => goToDetail(row.name)}
-                    className={`flex flex-col items-center justify-center rounded-lg px-2 py-3 text-white cursor-pointer transition active:scale-[0.97] hover:scale-[1.02] hover:shadow-lg hover:opacity-90 ${cat.chip}`}
+                    className={`flex flex-col items-center justify-center rounded-lg px-2 py-2 sm:py-3 text-white cursor-pointer transition active:scale-[0.97] hover:scale-[1.02] hover:shadow-lg hover:opacity-90 ${cat.chip}`}
                   >
                     <div className="flex items-center justify-center gap-2 w-full">
-                      <p className="text-[15px] font-semibold">{row.name} :</p>
+                      <p className="text-sm sm:text-[15px] font-semibold">{row.name} :</p>
                       <p className="text-sm font-bold">{Math.round(row.value)}</p>
                     </div>
                   </div>
@@ -608,10 +608,10 @@ export default function AirQualityDashboard() {
           </Card>
 
           {/* Warning + Recommendation */}
-          <div className="flex flex-row gap-4 justify-start w-[1000px] mt-4 ml-1">
-            <Card className="flex flex-col items-center justify-center bg-red-100 border-l-4 border-red-600 py-4 px-6 w-[200px]">
-              <div className="text-red-600 text-2xl mb-1">⚠</div>
-              <p className="font-bold text-red-700 leading-tight">PERINGATAN</p>
+          <div className="lg:col-span-2 flex flex-col sm:flex-row gap-3 sm:gap-4 justify-start w-full">
+            <Card className="flex flex-col items-center justify-center bg-red-100 border-l-4 border-red-600 py-3 sm:py-4 px-4 sm:px-6 w-full sm:w-auto sm:min-w-[180px]">
+              <div className="text-red-600 text-xl sm:text-2xl mb-1">⚠</div>
+              <p className="font-bold text-red-700 leading-tight text-sm sm:text-base">PERINGATAN</p>
               <p className="text-xs text-center mt-1">
                 {worstPollutant.status === "Baik"
                   ? "Udara dalam kondisi baik"
@@ -621,13 +621,13 @@ export default function AirQualityDashboard() {
               </p>
             </Card>
 
-            <Card className="flex flex-col bg-blue-100 py-4 px-6 w-[650px]">
-              <p className="font-bold mb-2 text-center">Rekomendasi</p>
+            <Card className="flex flex-col bg-blue-100 py-3 sm:py-4 px-4 sm:px-6 flex-1">
+              <p className="font-bold mb-2 text-center text-sm sm:text-base">Rekomendasi</p>
               <div className="flex flex-row items-center gap-3">
                 <div className="flex-shrink-0">
-                  <Image src={recIcon} alt="icon rekomendasi" width={48} height={48} className="w-12 h-12" />
+                  <Image src={recIcon} alt="icon rekomendasi" width={40} height={40} className="w-10 h-10 sm:w-12 sm:h-12" />
                 </div>
-                <Card className="p-4 border-slate-200 bg-white w-full">
+                <Card className="p-3 sm:p-4 border-slate-200 bg-white w-full">
                   <ul className="list-disc list-inside text-xs space-y-1 text-gray-700">
                     {recsStringList.map((t, i) => (
                       <li key={i}>{t}</li>
@@ -641,31 +641,31 @@ export default function AirQualityDashboard() {
         </div>
 
         {/* Detailed pollutant cards + chart */}
-        <div className="grid grid-cols-12 gap-4">
-          <div className="col-span-8">
-            <Card className="row-span-4 p-10 bg-blue-90">
-              <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+          <div className="lg:col-span-8">
+            <Card className="row-span-4 p-4 sm:p-6 lg:p-10 bg-slate-100">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {detailedData.map((item, idx) => (
                   <Card
                     key={idx}
                     onClick={() => goToDetail(item.name)}
-                    className="p-4 border-slate-200 bg-white hover:bg-slate-200 hover:shadow-md transition cursor-pointer active:scale-[0.99]"
+                    className="p-3 sm:p-4 border-slate-200 bg-white hover:bg-slate-200 hover:shadow-md transition cursor-pointer active:scale-[0.99]"
                   >
                     <div className="flex flex-col justify-between h-full">
                       <div className="flex justify-between items-start">
-                        <span className="px-2 py-1 rounded-md bg-blue-900 text-white text-[15px] font-semibold">
+                        <span className="px-2 py-1 rounded-md bg-blue-900 text-white text-sm sm:text-[15px] font-semibold">
                           {item.name}
                         </span>
-                        <p className="text-xl font-bold">{item.value}</p>
+                        <p className="text-lg sm:text-xl font-bold">{item.value}</p>
                       </div>
                       <div className="flex justify-between items-center mt-2">
                         <div className="flex items-center gap-2">
                           <Dot color={item.dotColor} />
-                          <p className="text-m font-medium" style={{ color: item.statusColor }}>
+                          <p className="text-sm sm:text-base font-medium" style={{ color: item.statusColor }}>
                             {item.status}
                           </p>
                         </div>
-                        <p className="text-m text-gray-700">{item.unit}</p>
+                        <p className="text-sm sm:text-base text-gray-700">{item.unit}</p>
                       </div>
                     </div>
                   </Card>
@@ -674,12 +674,12 @@ export default function AirQualityDashboard() {
             </Card>
           </div>
 
-          <Card className="col-span-4 px-5 py-5 bg-slate-100 flex items-center justify-center">
+          <Card className="lg:col-span-4 px-4 py-4 sm:px-5 sm:py-5 bg-slate-100 flex items-center justify-center min-h-[250px]">
             <ResponsiveContainer width="100%" height={230}>
               <BarChart data={ispuData}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
+                <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                <YAxis tick={{ fontSize: 12 }} />
                 <Tooltip />
                 <Bar dataKey="value">
                   {ispuData.map((entry, idx) => {

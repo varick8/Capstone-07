@@ -433,28 +433,29 @@ function AirQualityDetailPageContent() {
 
    return (
     <div className="min-h-screen bg-white font-sans text-black">
-      <div className="max-w-[1500px] mx-auto p-5">
+      <div className="max-w-[1500px] mx-auto p-3 sm:p-5">
         {/* Header */}
-        <div className="flex justify-between items-center bg-blue-900 text-white rounded-2xl px-5 py-4 mb-6">
-          <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-blue-900 text-white rounded-2xl px-4 sm:px-5 py-3 sm:py-4 mb-4 sm:mb-6 gap-3 sm:gap-0">
+          <div className="flex items-center gap-3 w-full sm:w-auto">
             <button
               onClick={() => router.push("/dashboard")}
               className="p-2 rounded-full hover:bg-blue-800"
             >
-              <IoArrowBack size={22} />
+              <IoArrowBack size={20} className="sm:hidden" />
+              <IoArrowBack size={22} className="hidden sm:block" />
             </button>
-            <h1 className="text-lg font-semibold">Indeks Standar Pencemaran Udara</h1>
+            <h1 className="text-base sm:text-lg font-semibold">Indeks Standar Pencemaran Udara</h1>
           </div>
-          <div className="relative">
+          <div className="relative w-full sm:w-auto">
             {userEmail && (
                          <div className="relative">
                            <button
                              onClick={() => setDropdownOpen((prev) => !prev)}
-                             className="flex items-center gap-1 text-sm font-medium px-3 py-1 rounded-lg hover:bg-blue-700 transition"
+                             className="flex items-center gap-1 text-xs sm:text-sm font-medium px-3 py-1 rounded-lg hover:bg-blue-700 transition w-full sm:w-auto justify-between sm:justify-start"
                            >
-                             {userEmail}
+                             <span className="truncate max-w-[200px]">{userEmail}</span>
                              <svg
-                               className={`w-4 h-4 transform transition-transform ${dropdownOpen ? "rotate-180" : "rotate-0"}`}
+                               className={`w-4 h-4 transform transition-transform flex-shrink-0 ${dropdownOpen ? "rotate-180" : "rotate-0"}`}
                                fill="none"
                                stroke="currentColor"
                                strokeWidth="2"
@@ -463,7 +464,7 @@ function AirQualityDetailPageContent() {
                                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                              </svg>
                            </button>
-           
+
                            {dropdownOpen && (
                              <div className="absolute right-0 mt-2 w-40 bg-white text-black rounded-lg shadow-lg border border-gray-200 z-10">
                                <button
@@ -481,9 +482,9 @@ function AirQualityDetailPageContent() {
         </div>
 
         {/* Info */}
-        <div className="flex justify-between bg-blue-50 rounded-2xl px-5 py-3 mb-6">
-          <h2 className="font-bold">{pollutant.name}</h2>
-          <div className="text-sm text-right">
+        <div className="flex flex-col sm:flex-row justify-between bg-blue-50 rounded-2xl px-4 sm:px-5 py-3 mb-4 sm:mb-6 gap-2 sm:gap-0">
+          <h2 className="font-bold text-sm sm:text-base">{pollutant.name}</h2>
+          <div className="text-xs sm:text-sm text-left sm:text-right">
             <p>
               <span className="font-semibold">Diambil pada:</span> {tanggal}
             </p>
@@ -494,33 +495,33 @@ function AirQualityDetailPageContent() {
         </div>
 
         {/* Data utama */}
-        <div className="grid grid-cols-12 gap-5 mb-8">
-          <Card className="col-span-12 md:col-span-4 bg-blue-50 p-4">
-            <h3 className="font-bold text-blue-700 mb-3">Data Utama</h3>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5 mb-6 sm:mb-8">
+          <Card className="bg-blue-50 p-4">
+            <h3 className="font-bold text-blue-700 mb-3 text-sm sm:text-base">Data Utama</h3>
+            <div className="space-y-2 text-xs sm:text-sm">
+              <div className="flex justify-between items-center">
                 <span>Konsentrasi</span>
-                <span className={`px-2 py-1 rounded-md ${pollutant.categoryColor}`}>{pollutant.concentration}</span>
+                <span className={`px-2 py-1 rounded-md text-xs sm:text-sm ${pollutant.categoryColor}`}>{pollutant.concentration}</span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between items-center">
                 <span>ISPU</span>
-                <span className={`px-2 py-1 rounded-md ${pollutant.categoryColor}`}>{pollutant.ispu}</span>
+                <span className={`px-2 py-1 rounded-md text-xs sm:text-sm ${pollutant.categoryColor}`}>{pollutant.ispu}</span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between items-center">
                 <span>Kategori</span>
-                <span className={`px-2 py-1 rounded-md ${pollutant.categoryColor}`}>{pollutant.category}</span>
+                <span className={`px-2 py-1 rounded-md text-xs sm:text-sm ${pollutant.categoryColor}`}>{pollutant.category}</span>
               </div>
             </div>
           </Card>
 
-          <Card className="col-span-12 md:col-span-4 bg-purple-50 p-4">
-            <h3 className="font-bold text-purple-700 mb-3">Deskripsi Singkat</h3>
-            <p className="text-sm leading-relaxed">{pollutant.description}</p>
+          <Card className="bg-purple-50 p-4">
+            <h3 className="font-bold text-purple-700 mb-3 text-sm sm:text-base">Deskripsi Singkat</h3>
+            <p className="text-xs sm:text-sm leading-relaxed">{pollutant.description}</p>
           </Card>
 
-          <Card className="col-span-12 md:col-span-4 bg-green-50 p-4">
-            <h3 className="font-bold text-green-700 mb-3">Rekomendasi</h3>
-            <ul className="list-decimal list-inside text-sm space-y-1">
+          <Card className="bg-green-50 p-4">
+            <h3 className="font-bold text-green-700 mb-3 text-sm sm:text-base">Rekomendasi</h3>
+            <ul className="list-decimal list-inside text-xs sm:text-sm space-y-1">
               {pollutant.recommendations.map((rec, i) => (
                 <li key={i}>{rec}</li>
               ))}
@@ -529,17 +530,17 @@ function AirQualityDetailPageContent() {
         </div>
 
         {/* Diagram History ISPU */}
-        <Card className="p-6 h-[400px] bg-slate-100 relative">
+        <Card className="p-4 sm:p-6 h-[350px] sm:h-[400px] bg-slate-100 relative">
           {dataLoading ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-900 mx-auto mb-4"></div>
-                <p className="text-gray-600">Memuat data historis...</p>
+                <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-blue-900 mx-auto mb-4"></div>
+                <p className="text-gray-600 text-sm">Memuat data historis...</p>
               </div>
             </div>
           ) : historyData.length === 0 ? (
             <div className="flex items-center justify-center h-full">
-              <p className="text-gray-500">Tidak ada data historis tersedia</p>
+              <p className="text-gray-500 text-sm">Tidak ada data historis tersedia</p>
             </div>
           ) : (
             <>
@@ -547,34 +548,40 @@ function AirQualityDetailPageContent() {
               <button
                 onClick={handlePrev}
                 disabled={startIndex === 0}
-                className="absolute left-2 top-1/2 -translate-y-1/2 bg-white shadow-md rounded-full p-2 hover:bg-gray-100 disabled:opacity-40 z-10"
+                className="absolute left-1 sm:left-2 top-1/2 -translate-y-1/2 bg-white shadow-md rounded-full p-1.5 sm:p-2 hover:bg-gray-100 disabled:opacity-40 z-10"
               >
-                <ChevronLeft size={20} />
+                <ChevronLeft size={16} className="sm:hidden" />
+                <ChevronLeft size={20} className="hidden sm:block" />
               </button>
               <button
                 onClick={handleNext}
                 disabled={startIndex + windowSize >= historyData.length}
-                className="absolute right-2 top-1/2 -translate-y-1/2 bg-white shadow-md rounded-full p-2 hover:bg-gray-100 disabled:opacity-40 z-10"
+                className="absolute right-1 sm:right-2 top-1/2 -translate-y-1/2 bg-white shadow-md rounded-full p-1.5 sm:p-2 hover:bg-gray-100 disabled:opacity-40 z-10"
               >
-                <ChevronRight size={20} />
+                <ChevronRight size={16} className="sm:hidden" />
+                <ChevronRight size={20} className="hidden sm:block" />
               </button>
 
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart
                   data={visibleData}
-                  margin={{ top: 50, right: 60, left: 20, bottom: 20 }}
+                  margin={{ top: 40, right: 10, left: -10, bottom: 20 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke="#d1d5db" />
                   <XAxis
                     dataKey="dateShort"
-                    tick={{ fontSize: 12 }}
+                    tick={{ fontSize: 10 }}
+                    angle={-45}
+                    textAnchor="end"
+                    height={60}
                   />
-                  <YAxis tick={{ fontSize: 12 }} />
+                  <YAxis tick={{ fontSize: 10 }} />
                   <Tooltip
                     contentStyle={{
                       backgroundColor: "#f9fafb",
                       border: "1px solid #e5e7eb",
                       borderRadius: "8px",
+                      fontSize: "12px",
                     }}
                     labelFormatter={(label, payload) => {
                       if (payload && payload.length > 0) {
@@ -583,7 +590,7 @@ function AirQualityDetailPageContent() {
                       return label;
                     }}
                   />
-                  <Legend wrapperStyle={{ fontSize: "12px" }} />
+                  <Legend wrapperStyle={{ fontSize: "10px" }} />
                   <Line
                     type="monotone"
                     dataKey="value"
@@ -594,8 +601,8 @@ function AirQualityDetailPageContent() {
                           currentPollutant === 'CO' ? 'CO' :
                           currentPollutant === 'NO2' ? 'NO₂' : 'O₃'}
                     strokeWidth={2}
-                    dot={{ r: 3 }}
-                    activeDot={{ r: 6 }}
+                    dot={{ r: 2 }}
+                    activeDot={{ r: 5 }}
                   />
                 </LineChart>
               </ResponsiveContainer>

@@ -52,21 +52,21 @@ export default function LoginPage() {
       <div className="absolute bottom-[-100px] left-[50px] w-[300px] h-[300px] bg-cyan-300/25 rounded-full blur-[100px]"></div>
 
       {/* Konten utama */}
-      <div className="relative z-10 flex w-full max-w-6xl justify-between items-center px-16">
+      <div className="relative z-10 flex flex-col lg:flex-row w-full max-w-6xl justify-between items-center px-6 sm:px-12 lg:px-16 gap-8 lg:gap-0">
         {/* Kiri - teks sambutan */}
-        <div className="max-w-lg">
-          <h1 className="text-4xl font-extrabold text-blue-900 mb-2">Halo,</h1>
-          <h2 className="text-5xl font-extrabold text-blue-800 mb-4">
+        <div className="max-w-lg text-center lg:text-left">
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-blue-900 mb-2">Halo,</h1>
+          <h2 className="text-4xl sm:text-5xl font-extrabold text-blue-800 mb-4">
             Selamat Datang!
           </h2>
-          <p className="text-gray-800 text-base leading-relaxed">
+          <p className="text-gray-800 text-sm sm:text-base leading-relaxed">
             Pantau kualitas udara di sekitarmu secara mudah dan cepat melalui
             sistem perhitungan ISPU kami.
           </p>
         </div>
 
         {/* Kanan - form login */}
-        <div className="backdrop-blur-xl bg-white/25 border border-white/30 shadow-[0_8px_32px_0_rgba(31,38,135,0.37)] rounded-2xl p-10 w-full max-w-sm transition-all duration-500 hover:bg-white/30">
+        <div className="backdrop-blur-xl bg-white/25 border border-white/30 shadow-[0_8px_32px_0_rgba(31,38,135,0.37)] rounded-2xl p-6 sm:p-10 w-full max-w-sm transition-all duration-500 hover:bg-white/30">
           <h2 className="text-center text-2xl font-semibold text-blue-900 mb-6">
             Masuk ke Akunmu
           </h2>
