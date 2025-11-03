@@ -344,6 +344,20 @@ function AirQualityDetailPageContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router, searchParams]);
 
+  const handleLogout = async () => {
+    try {
+      await fetch("https://capstone-07-backend.vercel.app/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch (error) {
+      console.error("Logout error:", error);
+    } finally {
+      localStorage.removeItem("userEmail");
+      router.push("/");
+    }
+  };
+
   // Data polutan
   const getPollutantData = () => {
     if (!sensorDetail)
@@ -433,28 +447,35 @@ function AirQualityDetailPageContent() {
           </div>
           <div className="relative">
             {userEmail && (
-              <>
-                <button
-                  onClick={() => setDropdownOpen(!dropdownOpen)}
-                  className="px-3 py-1 rounded-lg hover:bg-blue-700"
-                >
-                  {userEmail}
-                </button>
-                {dropdownOpen && (
-                  <div className="absolute right-0 mt-2 bg-white text-black rounded-lg shadow-lg border border-gray-200 z-10">
-                    <button
-                      onClick={() => {
-                        localStorage.removeItem("userEmail");
-                        router.push("/");
-                      }}
-                      className="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
-                    >
-                      <LogOut className="w-4 h-4" />
-                      Keluar
-                    </button>
-                  </div>
-                )}
-              </>
+                         <div className="relative">
+                           <button
+                             onClick={() => setDropdownOpen((prev) => !prev)}
+                             className="flex items-center gap-1 text-sm font-medium px-3 py-1 rounded-lg hover:bg-blue-700 transition"
+                           >
+                             {userEmail}
+                             <svg
+                               className={`w-4 h-4 transform transition-transform ${dropdownOpen ? "rotate-180" : "rotate-0"}`}
+                               fill="none"
+                               stroke="currentColor"
+                               strokeWidth="2"
+                               viewBox="0 0 24 24"
+                             >
+                               <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                             </svg>
+                           </button>
+           
+                           {dropdownOpen && (
+                             <div className="absolute right-0 mt-2 w-40 bg-white text-black rounded-lg shadow-lg border border-gray-200 z-10">
+                               <button
+                                 onClick={handleLogout}
+                                 className="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 rounded-lg"
+                               >
+                                 <LogOut className="w-4 h-4" />
+                                 Keluar
+                               </button>
+                             </div>
+                           )}
+          </div>
             )}
           </div>
         </div>
