@@ -12,13 +12,21 @@ dotenv.config();
 
 const app = express();
 
-const allowedOrigins = ["http://localhost:3000", "https://capstone-07.vercel.app/"];
+const allowedOrigins = ["http://localhost:3000", "https://capstone-07.vercel.app"];
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(cors({
   origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps, Postman, or direct server requests)
     if (!origin) return callback(null, true);
+
+    // Allow any Vercel deployment URLs (for testing)
+    if (origin.includes('.vercel.app')) {
+      return callback(null, true);
+    }
+
+    // Check against allowed origins list
     if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
