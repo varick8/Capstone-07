@@ -1,7 +1,7 @@
 import bcrypt from "bcrypt";
 import UserModel from "@/models/user";
 import SessionModel from "@/models/session";
-import { signToken, verifyToken } from "@/utils.ts/jwt";
+import { signToken, verifyToken } from "@/utils/jwt";
 
 export const createAccount = async ({
   email,

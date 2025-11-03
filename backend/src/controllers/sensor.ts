@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { Sensor } from "../models/sensor";
-import { formatDateByLocation } from "@/utils.ts/date";
+import { formatDateByLocation } from "@/utils/date";
 
 // GET: ambil semua data sensor
 export const getSensors = async (req: Request, res: Response) => {

@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { Sensor } from "../models/sensor";
 import { Ispu } from "../models/ispu";
-import { formatDateByLocation } from "@/utils.ts/date";
+import { formatDateByLocation } from "@/utils/date";
 
 // GET: ambil detail data sensor berdasarkan parameter type
 export const getSensorDetailByType = async (req: Request, res: Response) => {

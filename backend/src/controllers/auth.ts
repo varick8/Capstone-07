@@ -1,8 +1,8 @@
 import { Request, Response } from "express";
 import SessionModel from "../models/session";
 import { createAccount, loginUser, refreshUserAccessToken } from "@/services/auth";
-import { setAuthCookies, clearAuthCookies, getAccessTokenCookieOptions } from "@/utils.ts/cookies";
-import { verifyToken } from "@/utils.ts/jwt";
+import { setAuthCookies, clearAuthCookies, getAccessTokenCookieOptions } from "@/utils/cookies";
+import { verifyToken } from "@/utils/jwt";
 
 export const registerHandler = async (req: Request, res: Response) => {
   const { user, accessToken, refreshToken } = await createAccount({

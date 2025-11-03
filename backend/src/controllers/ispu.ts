@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { Ispu } from "../models/ispu";
-import { formatDateByLocation } from "@/utils.ts/date";
+import { formatDateByLocation } from "@/utils/date";
 
 // GET: ambil semua data ispu
 export const getIspu = async (req: Request, res: Response) => {
