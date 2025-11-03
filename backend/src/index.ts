@@ -12,7 +12,7 @@ dotenv.config();
 
 const app = express();
 
-const allowedOrigins = ["http://localhost:3000"];
+const allowedOrigins = ["http://localhost:3000", "https://capstone-07.vercel.app/"];
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
