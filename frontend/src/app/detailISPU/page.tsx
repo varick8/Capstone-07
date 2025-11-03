@@ -268,7 +268,7 @@ function AirQualityDetailPageContent() {
   const fetchSensorDetail = async (pollutantParam: string) => {
     try {
       setDataLoading(true);
-      const response = await fetch(`http://localhost:8080/api/merge/detail/${pollutantParam}`, {
+      const response = await fetch(`https://capstone-07-backend.vercel.app/api/merge/detail/${pollutantParam}`, {
         method: "GET",
         credentials: "include",
         headers: {
@@ -315,7 +315,7 @@ function AirQualityDetailPageContent() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const res = await fetch("http://localhost:8080/api/auth/me", {
+        const res = await fetch("https://capstone-07-backend.vercel.app/api/auth/me", {
           credentials: "include",
         });
         if (!res.ok) {

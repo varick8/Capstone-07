@@ -2,8 +2,8 @@ import { Response } from "express";
 
 const baseOptions = {
   httpOnly: true,
-  sameSite: "strict" as const,
-  secure: process.env.NODE_ENV === "production",
+  sameSite: "none" as const, // Changed from "strict" to "none" for cross-origin requests
+  secure: true, // Required when sameSite is "none"
 };
 
 export const getAccessTokenCookieOptions = () => ({
