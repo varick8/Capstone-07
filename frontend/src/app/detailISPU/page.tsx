@@ -243,7 +243,7 @@ function AirQualityDetailPageContent() {
   const [jam, setJam] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [historyData, setHistoryData] = useState<Array<{ date: string; dateShort: string; value: number }>>([]);
+  const [historyData, setHistoryData] = useState<Array<{ date: string; dateShort: string; value: number; category: string; categoryColor: string }>>([]);
   const [startIndex, setStartIndex] = useState(0);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [sensorDetail, setSensorDetail] = useState<SensorDetailResponse | null>(null);
@@ -292,10 +292,13 @@ function AirQualityDetailPageContent() {
         if (data.historical && data.historical.length > 0) {
           const processedHistory = data.historical.map((item) => {
             const itemDate = new Date(item.date);
+            const cat = categoryOf(item.value);
             return {
               date: formatTanggalIndonesia(itemDate),
               dateShort: itemDate.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }),
               value: item.value,
+              category: cat.label,
+              categoryColor: cat.color,
             };
           });
           setHistoryData(processedHistory);
@@ -391,20 +394,69 @@ function AirQualityDetailPageContent() {
 
   const pollutant = getPollutantData();
   const visibleData = historyData.slice(startIndex, startIndex + windowSize);
+
+  // Helper function to convert Tailwind class to hex color
+  const getCategoryHexColor = (categoryColor: string) => {
+    if (categoryColor.includes('green-600')) return '#16a34a';
+    if (categoryColor.includes('blue-600')) return '#2563eb';
+    if (categoryColor.includes('yellow-400')) return '#facc15';
+    if (categoryColor.includes('red-600')) return '#dc2626';
+    if (categoryColor.includes('black')) return '#000000';
+    return '#6b7280'; // default gray
+  };
+
+  // Custom dot component
+  const CustomDot = (props: any) => {
+    const { cx, cy, payload } = props;
+    if (!payload) return null;
+    const color = getCategoryHexColor(payload.categoryColor || '');
+    return (
+      <circle
+        cx={cx}
+        cy={cy}
+        r={5}
+        fill={color}
+        stroke="#fff"
+        strokeWidth={2}
+      />
+    );
+  };
+
+  // Custom tooltip component
+  const CustomTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload;
+      const statusColor = getCategoryHexColor(data.categoryColor || '');
+      return (
+        <div style={{
+          backgroundColor: '#f9fafb',
+          border: '1px solid #e5e7eb',
+          borderRadius: '8px',
+          padding: '8px 12px',
+          fontSize: '12px'
+        }}>
+          <p style={{ margin: '0 0 4px 0', fontWeight: '500' }}>{data.date}</p>
+          <p style={{ margin: '2px 0' }}>ISPU: {data.value}</p>
+          <p style={{ margin: '2px 0 0 0', fontWeight: 'bold', fontSize: '11px', color: statusColor }}>Status: {data.category}</p>
+        </div>
+      );
+    }
+    return null;
+  };
   useEffect(() => {
-      if (!isAuthenticated) return;
-  
-      // Fetch sensor data every 30 seconds
+      if (!isAuthenticated || !currentPollutant) return;
+
+      // Fetch sensor data every 60 seconds
       // Date, time, and background are now updated by fetchSensorData
       const fetchInterval = setInterval(() => {
         fetchSensorDetail(currentPollutant.toLowerCase());
       }, 60 * 1000);
-  
+
       return () => {
         clearInterval(fetchInterval);
       };
       // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated]);
+  }, [isAuthenticated, currentPollutant]);
 
   if (isLoading) {
     return (
@@ -530,6 +582,7 @@ function AirQualityDetailPageContent() {
         </div>
 
         {/* Diagram History ISPU */}
+        <div className="space-y-3">
         <Card className="p-4 sm:p-6 h-[350px] sm:h-[400px] bg-slate-100 relative">
           {dataLoading ? (
             <div className="flex items-center justify-center h-full">
@@ -565,7 +618,7 @@ function AirQualityDetailPageContent() {
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart
                   data={visibleData}
-                  margin={{ top: 40, right: 10, left: -10, bottom: 20 }}
+                  margin={{ top: 40, right: 40, left: 0, bottom: 20 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke="#d1d5db" />
                   <XAxis
@@ -576,39 +629,25 @@ function AirQualityDetailPageContent() {
                     height={60}
                   />
                   <YAxis tick={{ fontSize: 10 }} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "#f9fafb",
-                      border: "1px solid #e5e7eb",
-                      borderRadius: "8px",
-                      fontSize: "12px",
-                    }}
-                    labelFormatter={(label, payload) => {
-                      if (payload && payload.length > 0) {
-                        return payload[0].payload.date;
-                      }
-                      return label;
-                    }}
-                  />
-                  <Legend wrapperStyle={{ fontSize: "10px" }} />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Legend wrapperStyle={{ fontSize: "10px", color: "#f97316" }} />
                   <Line
                     type="monotone"
                     dataKey="value"
-                    stroke={currentPollutant === 'PM25' ? '#3b82f6' :
-                           currentPollutant === 'CO' ? '#ef4444' :
-                           currentPollutant === 'NO2' ? '#f97316' : '#22c55e'}
+                    stroke="#f97316"
                     name={currentPollutant === 'PM25' ? 'PM₂.₅' :
                           currentPollutant === 'CO' ? 'CO' :
                           currentPollutant === 'NO2' ? 'NO₂' : 'O₃'}
                     strokeWidth={2}
-                    dot={{ r: 2 }}
-                    activeDot={{ r: 5 }}
+                    dot={<CustomDot />}
+                    activeDot={{ r: 7, fill: "#f97316", stroke: "#f97316" }}
                   />
                 </LineChart>
               </ResponsiveContainer>
             </>
           )}
         </Card>
+        </div>
       </div>
     </div>
   );

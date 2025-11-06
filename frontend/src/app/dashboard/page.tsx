@@ -292,6 +292,7 @@ export default function AirQualityDashboard() {
   // Background style that changes according to hour
   const [bgStyle, setBgStyle] = useState("bg-[url('/background.png')] bg-cover bg-center");
   const [gradientStyle, setGradientStyle] = useState("");
+  const [textColor, setTextColor] = useState("text-blue-900");
 
   // Fetch sensor data from backend
   const fetchSensorData = async () => {
@@ -329,15 +330,19 @@ export default function AirQualityDashboard() {
         if (hours >= 5 && hours < 11) {
       setBgStyle("bg-[url('/morning.png')] bg-cover bg-center bg-no-repeat");
       setGradientStyle("from-black/40 to-transparent");
+      setTextColor("text-blue-900");
     } else if (hours >= 11 && hours < 16) {
       setBgStyle("bg-[url('/afternoon.png')] bg-cover bg-center bg-no-repeat");
       setGradientStyle("from-black/30 to-transparent");
+      setTextColor("text-blue-900");
     } else if (hours >= 16 && hours < 18) {
       setBgStyle("bg-[url('/evening.png')] bg-cover bg-center bg-no-repeat");
       setGradientStyle("from-black/35 to-transparent");
+      setTextColor("text-white");
     } else {
       setBgStyle("bg-[url('/night.png')] bg-cover bg-center bg-no-repeat");
       setGradientStyle("from-black/15 to-transparent");
+      setTextColor("text-white");
     }
 
       }
@@ -560,18 +565,18 @@ export default function AirQualityDashboard() {
         <div
           className={`absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t ${gradientStyle} pointer-events-none rounded-b-2xl`}
         ></div>
-        <div className="relative flex flex-col sm:flex-row justify-between items-start sm:items-center h-full text-white drop-shadow-md gap-2 sm:gap-0">
+        <div className="relative flex flex-col sm:flex-row justify-between items-start sm:items-center h-full drop-shadow-md gap-2 sm:gap-0">
           <div className="flex flex-col">
-            <span className="font-extrabold text-blue-900 text-sm sm:text-base">
+            <span className={`font-extrabold ${textColor} text-sm sm:text-base`}>
               📍 {sensorData?.location || "Sleman, Yogyakarta"}
             </span>
-            <span className="flex items-center gap-2 sm:gap-3 text-xs text-blue-900">
+            <span className={`flex items-center gap-2 sm:gap-3 text-xs ${textColor}`}>
               <span className="flex items-center gap-1">
-                <Thermometer className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
+                <Thermometer className="w-3 h-3 sm:w-4 sm:h-4 text-blue-300" />
                 {temperature}
               </span>
-              <span className="flex items-center gap-1 text-blue-900">
-                <Droplets className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
+              <span className="flex items-center gap-1">
+                <Droplets className="w-3 h-3 sm:w-4 sm:h-4 text-blue-300" />
                 {sensorData?.sensors?.hum?.value ?? "--"}
                 {sensorData?.sensors?.hum?.unit ?? "%"}
               </span>
@@ -579,8 +584,8 @@ export default function AirQualityDashboard() {
           </div>
 
           <div className="text-left sm:text-right text-xs sm:text-sm">
-            <p className="font-extrabold text-blue-900">{currentDate}</p>
-            <p className="font-extrabold text-blue-900">{currentTime}</p>
+            <p className={`font-extrabold ${textColor}`}>{currentDate}</p>
+            <p className={`font-extrabold ${textColor}`}>{currentTime}</p>
           </div>
         </div>
       </Card>
@@ -609,17 +614,25 @@ export default function AirQualityDashboard() {
 
           {/* Warning + Recommendation */}
           <div className="lg:col-span-2 flex flex-col sm:flex-row gap-3 sm:gap-4 justify-start w-full">
-            <Card className="flex flex-col items-center justify-center bg-red-100 border-l-4 border-red-600 py-3 sm:py-4 px-4 sm:px-6 w-full sm:w-auto sm:min-w-[180px]">
-              <div className="text-red-600 text-xl sm:text-2xl mb-1">⚠</div>
-              <p className="font-bold text-red-700 leading-tight text-sm sm:text-base">PERINGATAN</p>
-              <p className="text-xs text-center mt-1">
-                {worstPollutant.status === "Baik"
-                  ? "Udara dalam kondisi baik"
-                  : worstPollutant.status === "Sedang"
-                  ? "Udara dalam kondisi sedang"
-                  : warnings[worstPollutant.name] || `Kadar ${worstPollutant.name} ${worstPollutant.status.toLowerCase()}`}
-              </p>
-            </Card>
+            {worstPollutant.status === "Baik" ? (
+              <Card className="flex flex-col items-center justify-center bg-green-100 border-l-4 border-green-600 py-3 sm:py-4 px-4 sm:px-6 w-full sm:w-auto sm:min-w-[180px]">
+                <div className="text-green-600 text-xl sm:text-2xl mb-1">✓</div>
+                <p className="font-bold text-green-700 leading-tight text-sm sm:text-base">STATUS</p>
+                <p className="text-xs text-center mt-1 text-green-700">
+                  Udara dalam kondisi baik
+                </p>
+              </Card>
+            ) : (
+              <Card className="flex flex-col items-center justify-center bg-red-100 border-l-4 border-red-600 py-3 sm:py-4 px-4 sm:px-6 w-full sm:w-auto sm:min-w-[180px]">
+                <div className="text-red-600 text-xl sm:text-2xl mb-1">⚠</div>
+                <p className="font-bold text-red-700 leading-tight text-sm sm:text-base">PERINGATAN</p>
+                <p className="text-xs text-center mt-1">
+                  {worstPollutant.status === "Sedang"
+                    ? "Udara dalam kondisi sedang"
+                    : warnings[worstPollutant.name] || `Kadar ${worstPollutant.name} ${worstPollutant.status.toLowerCase()}`}
+                </p>
+              </Card>
+            )}
 
             <Card className="flex flex-col bg-blue-100 py-3 sm:py-4 px-4 sm:px-6 flex-1">
               <p className="font-bold mb-2 text-center text-sm sm:text-base">Rekomendasi</p>
