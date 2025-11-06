@@ -235,6 +235,28 @@ interface SensorDetailResponse {
   historical: HistoricalData[];
 }
 
+interface CustomDotProps {
+  cx?: number;
+  cy?: number;
+  payload?: {
+    categoryColor?: string;
+    [key: string]: unknown;
+  };
+}
+
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: Array<{
+    payload: {
+      date: string;
+      value: number;
+      category: string;
+      categoryColor: string;
+      [key: string]: unknown;
+    };
+  }>;
+}
+
 function AirQualityDetailPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -406,7 +428,7 @@ function AirQualityDetailPageContent() {
   };
 
   // Custom dot component
-  const CustomDot = (props: any) => {
+  const CustomDot = (props: CustomDotProps) => {
     const { cx, cy, payload } = props;
     if (!payload) return null;
     const color = getCategoryHexColor(payload.categoryColor || '');
@@ -423,7 +445,7 @@ function AirQualityDetailPageContent() {
   };
 
   // Custom tooltip component
-  const CustomTooltip = ({ active, payload }: any) => {
+  const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       const statusColor = getCategoryHexColor(data.categoryColor || '');
