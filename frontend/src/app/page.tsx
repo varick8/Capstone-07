@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
+import Image from "next/image";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -55,9 +56,12 @@ export default function LoginPage() {
       <div className="relative z-10 flex flex-col lg:flex-row w-full max-w-6xl justify-between items-center px-6 sm:px-12 lg:px-16 gap-8 lg:gap-0">
         {/* Kiri - teks sambutan */}
         <div className="max-w-lg text-center lg:text-left">
+          <div className="flex justify-center lg:justify-start mb-4">
+            <Image src="/icononly_transparent_nobuffer.png" alt="ISPURE Logo" width={60} height={60} className="w-12 h-12 sm:w-14 sm:h-14" />
+          </div>
           <h1 className="text-3xl sm:text-4xl font-extrabold text-blue-900 mb-2">Halo,</h1>
           <h2 className="text-4xl sm:text-5xl font-extrabold text-blue-800 mb-4">
-            Selamat Datang!
+            Sobat ISPURE!
           </h2>
           <p className="text-gray-800 text-sm sm:text-base leading-relaxed">
             Pantau kualitas udara di sekitarmu secara mudah dan cepat melalui

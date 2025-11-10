@@ -15,6 +15,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "ISPURE",
   description: "Sistem Cerdas untuk Pemantauan dan Pengawasan Kualitas Udara",
+  icons: {
+    icon: "/icononly_transparent_nobuffer.png",
+  },
 };
 
 export default function RootLayout({

@@ -518,7 +518,8 @@ export default function AirQualityDashboard() {
       <div className="max-w-[1500px] mx-auto p-3 sm:p-5">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-blue-900 text-white rounded-2xl px-4 sm:px-5 py-3 sm:py-4 mb-4 sm:mb-6 gap-3 sm:gap-0">
-          <div>
+          <div className="flex items-center gap-3">
+            <Image src="/icononly_transparent_nobuffer.png" alt="ISPURE Logo" width={32} height={32} className="w-6 h-6 sm:w-8 sm:h-8" />
             <h1 className="text-base sm:text-lg font-semibold">Indeks Standar Pencemaran Udara</h1>
           </div>
 

@@ -3,6 +3,7 @@ import React, { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { IoArrowBack } from "react-icons/io5";
 import { ChevronLeft, ChevronRight, LogOut } from "lucide-react";
+import Image from "next/image";
 import {
   LineChart,
   Line,
@@ -518,6 +519,7 @@ function AirQualityDetailPageContent() {
               <IoArrowBack size={20} className="sm:hidden" />
               <IoArrowBack size={22} className="hidden sm:block" />
             </button>
+            <Image src="/icononly_transparent_nobuffer.png" alt="ISPURE Logo" width={32} height={32} className="w-6 h-6 sm:w-8 sm:h-8" />
             <h1 className="text-base sm:text-lg font-semibold">Indeks Standar Pencemaran Udara</h1>
           </div>
           <div className="relative w-full sm:w-auto">
