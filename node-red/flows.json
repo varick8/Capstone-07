@@ -1,0 +1,336 @@
+[
+    {
+        "id": "65fe52f607d77008",
+        "type": "tab",
+        "label": "Capstone E_07",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "c78f66bcc9e9a0e7",
+        "type": "mqtt in",
+        "z": "65fe52f607d77008",
+        "name": "MQTT STM32 1",
+        "topic": "capstone07/stm32/data",
+        "qos": "0",
+        "datatype": "auto-detect",
+        "broker": "11508b14721a3a58",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 160,
+        "y": 160,
+        "wires": [
+            [
+                "442232a4c5ca698f",
+                "c94105c1e183143a"
+            ]
+        ]
+    },
+    {
+        "id": "c503a6c873a36970",
+        "type": "mongodb out",
+        "z": "65fe52f607d77008",
+        "mongodb": "7d9a9bf2c24fd0b0",
+        "name": "",
+        "collection": "sensors",
+        "payonly": false,
+        "upsert": false,
+        "multi": false,
+        "operation": "store",
+        "x": 1010,
+        "y": 80,
+        "wires": []
+    },
+    {
+        "id": "686dd3844393a1a2",
+        "type": "function",
+        "z": "65fe52f607d77008",
+        "name": "Location",
+        "func": "// The HTTP response from Nominatim (OpenStreetMap)\nconst osmData = msg.payload;\n\n// Retrieve the original sensor data that was stored earlier\nlet merged = msg.osmOriginalPayload || {};\n\n// Extract county and state from the OSM response\nif (osmData && osmData.address) {\n    const county = osmData.address.county || \"\";\n    const state = osmData.address.state || \"\";\n\n    // Build a concise location string (e.g., \"Sleman, Daerah Istimewa Yogyakarta\")\n    if (county && state) {\n        merged.loc = `${county}, ${state}`;\n    } else if (state) {\n        merged.loc = state;\n    } else {\n        merged.loc = osmData.display_name || \"Unknown location\";\n    }\n} else {\n    merged.loc = \"Unknown location\";\n}\n\n// Remove latitude and longitude fields\ndelete merged.lat;\ndelete merged.lon;\n\n// Set the final merged object as payload\nmsg.payload = merged;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 740,
+        "y": 200,
+        "wires": [
+            [
+                "4d0961f5dec427ce",
+                "780243203e832da9",
+                "c503a6c873a36970"
+            ]
+        ]
+    },
+    {
+        "id": "780243203e832da9",
+        "type": "function",
+        "z": "65fe52f607d77008",
+        "name": "Ispu",
+        "func": "// Ambil data dari payload\nlet co = parseFloat(msg.payload.co);\nlet pm25 = parseFloat(msg.payload.pm25);\nlet no2 = parseFloat(msg.payload.no2);\nlet o3 = parseFloat(msg.payload.o3);\nlet dateTime = msg.payload.dateTime;\nlet loc = msg.payload.loc;\n\n// Fungsi hitung ISPU\nfunction hitungISPU(X, batas) {\n    for (let i = 0; i < batas.length - 1; i++) {\n        let b = batas[i];\n        let a = batas[i + 1];\n        if (X >= b.Xb && X <= a.Xb) {\n            return b.Ib + ((a.Ib - b.Ib) / (a.Xb - b.Xb)) * (X - b.Xb);\n        }\n    }\n    return 500; // Jika melebihi batas maksimum\n}\n\n// Tabel batas ISPU\nlet batasPM25 = [\n    { Ib: 0, Xb: 0 },\n    { Ib: 50, Xb: 15.5 },\n    { Ib: 100, Xb: 55.4 },\n    { Ib: 200, Xb: 150.4 },\n    { Ib: 300, Xb: 250.4 },\n    { Ib: 400, Xb: 350.4 },\n    { Ib: 500, Xb: 500.4 }\n];\n\nlet batasCO = [\n    { Ib: 0, Xb: 0 },\n    { Ib: 50, Xb: 4000 },\n    { Ib: 100, Xb: 8000 },\n    { Ib: 200, Xb: 15000 },\n    { Ib: 300, Xb: 30000 },\n    { Ib: 400, Xb: 46000 },\n    { Ib: 500, Xb: 57000 }\n];\n\nlet batasO3 = [\n    { Ib: 0, Xb: 0 },\n    { Ib: 50, Xb: 120 },\n    { Ib: 100, Xb: 235 },\n    { Ib: 200, Xb: 400 },\n    { Ib: 300, Xb: 800 },\n    { Ib: 400, Xb: 1000 },\n    { Ib: 500, Xb: 1200 }\n];\n\nlet batasNO2 = [\n    { Ib: 0, Xb: 0 },\n    { Ib: 50, Xb: 80 },\n    { Ib: 100, Xb: 200 },\n    { Ib: 200, Xb: 1130 },\n    { Ib: 300, Xb: 2260 },\n    { Ib: 400, Xb: 3000 },\n    { Ib: 500, Xb: 3750 }\n];\n\n// Hitung ISPU tiap parameter\nlet ispu_pm25 = hitungISPU(pm25, batasPM25);\nlet ispu_co = hitungISPU(co, batasCO);\nlet ispu_no2 = hitungISPU(no2, batasNO2);\nlet ispu_o3 = hitungISPU(o3, batasO3);\n\n// Bentuk payload baru hanya dengan hasil ISPU + waktu\nmsg.payload = {\n    pm25: Math.round(ispu_pm25),\n    co: Math.round(ispu_co),\n    no2: Math.round(ispu_no2),\n    o3: Math.round(ispu_o3),\n    dateTime: dateTime,\n    loc: loc\n};\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 890,
+        "y": 260,
+        "wires": [
+            [
+                "b437d1a8ea09c73d",
+                "0ad8741d11b9b004",
+                "dd33e6624f276be5"
+            ]
+        ]
+    },
+    {
+        "id": "b437d1a8ea09c73d",
+        "type": "debug",
+        "z": "65fe52f607d77008",
+        "name": "debug",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1070,
+        "y": 300,
+        "wires": []
+    },
+    {
+        "id": "dd33e6624f276be5",
+        "type": "mongodb out",
+        "z": "65fe52f607d77008",
+        "mongodb": "7d9a9bf2c24fd0b0",
+        "name": "",
+        "collection": "ispus",
+        "payonly": false,
+        "upsert": false,
+        "multi": false,
+        "operation": "store",
+        "x": 1100,
+        "y": 240,
+        "wires": []
+    },
+    {
+        "id": "dc25df6ab6820738",
+        "type": "e-mail",
+        "z": "65fe52f607d77008",
+        "server": "smtp.gmail.com",
+        "port": "465",
+        "authtype": "BASIC",
+        "saslformat": true,
+        "token": "oauth2Response.access_token",
+        "secure": true,
+        "tls": true,
+        "name": "varick.zahir@gmail.com",
+        "dname": "Alert Email",
+        "x": 1270,
+        "y": 320,
+        "wires": []
+    },
+    {
+        "id": "0ad8741d11b9b004",
+        "type": "function",
+        "z": "65fe52f607d77008",
+        "name": "Status Ispu",
+        "func": "// Helper function to determine status\nfunction getStatus(value) {\n    if (value >= 0 && value <= 50) return \"Baik\";\n    else if (value >= 51 && value <= 100) return \"Sedang\";\n    else if (value >= 101 && value <= 200) return \"Tidak Sehat\";\n    else if (value >= 201 && value <= 300) return \"Sangat Tidak Sehat\";\n    else if (value > 300) return \"Berbahaya\";\n    else return \"Data Tidak Valid\";\n}\n\n// Helper function to get status color\nfunction getStatusColor(status) {\n    switch (status) {\n        case \"Baik\": return \"#10b981\";\n        case \"Sedang\": return \"#f59e0b\";\n        case \"Tidak Sehat\": return \"#ef4444\";\n        case \"Sangat Tidak Sehat\": return \"#dc2626\";\n        case \"Berbahaya\": return \"#991b1b\";\n        default: return \"#6b7280\";\n    }\n}\n\n// Helper function to get pollutant icon\nfunction getPollutantIcon(pollutant) {\n    const icons = {\n        \"PM2.5\": \"🌫️\",\n        \"CO\": \"☁️\",\n        \"NO₂\": \"💨\",\n        \"O₃\": \"🌪️\"\n    };\n    return icons[pollutant] || \"📊\";\n}\n\n// Extract data\nlet data = msg.payload;\n\n// Determine statuses\nlet pm25_status = getStatus(data.pm25);\nlet co_status = getStatus(data.co);\nlet no2_status = getStatus(data.no2);\nlet o3_status = getStatus(data.o3);\n\n// Update msg.payload object\nmsg.payload = {\n    pm25: data.pm25,\n    pm25_status,\n    co: data.co,\n    co_status,\n    no2: data.no2,\n    no2_status,\n    o3: data.o3,\n    o3_status,\n    dateTime: data.dateTime,\n    loc: data.loc\n};\n\n// Check if any pollutant is \"Berbahaya\"\nif ([pm25_status, co_status, no2_status, o3_status].includes(\"Berbahaya\")) {\n    msg.topic = `⚠️ ALERT: Kualitas Udara Berbahaya di ${data.loc}`;\n    msg.payload = `\n    <!DOCTYPE html>\n    <html>\n    <head>\n        <meta charset=\"UTF-8\">\n        <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    </head>\n    <body style=\"margin: 0; padding: 0; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;\">\n        <table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"padding: 40px 20px;\">\n            <tr>\n                <td align=\"center\">\n                    <table width=\"600\" cellpadding=\"0\" cellspacing=\"0\" style=\"background: #ffffff; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); overflow: hidden; max-width: 100%;\">\n                        \n                        <!-- Header Section -->\n                        <tr>\n                            <td style=\"background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); padding: 40px 30px; text-align: center;\">\n                                <div style=\"font-size: 48px; margin-bottom: 10px;\">⚠️</div>\n                                <h1 style=\"margin: 0; color: #ffffff; font-size: 28px; font-weight: 700; text-shadow: 0 2px 4px rgba(0,0,0,0.2);\">\n                                    Peringatan Kualitas Udara\n                                </h1>\n                                <p style=\"margin: 10px 0 0 0; color: #fee2e2; font-size: 16px; font-weight: 500;\">\n                                    Status: BERBAHAYA\n                                </p>\n                            </td>\n                        </tr>\n                        \n                        <!-- Location & Time Info -->\n                        <tr>\n                            <td style=\"padding: 30px 30px 20px 30px;\">\n                                <table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\">\n                                    <tr>\n                                        <td style=\"text-align: center; padding: 20px; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-radius: 12px; border-left: 4px solid #f59e0b;\">\n                                            <p style=\"margin: 0; font-size: 14px; color: #92400e; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;\">📍 Lokasi</p>\n                                            <p style=\"margin: 8px 0 0 0; font-size: 20px; color: #78350f; font-weight: 700;\">${data.loc}</p>\n                                        </td>\n                                    </tr>\n                                    <tr>\n                                        <td style=\"padding-top: 15px; text-align: center; background: #f3f4f6; border-radius: 12px; padding: 20px; margin-top: 15px;\">\n                                            <p style=\"margin: 0; font-size: 14px; color: #6b7280; font-weight: 600;\">🕒 Waktu Deteksi</p>\n                                            <p style=\"margin: 8px 0 0 0; font-size: 16px; color: #374151; font-weight: 600;\">${new Date(data.dateTime).toLocaleString('id-ID', {\n        weekday: 'long',\n        year: 'numeric',\n        month: 'long',\n        day: 'numeric',\n        hour: '2-digit',\n        minute: '2-digit'\n    })}</p>\n                                        </td>\n                                    </tr>\n                                </table>\n                            </td>\n                        </tr>\n                        \n                        <!-- Pollutants Data -->\n                        <tr>\n                            <td style=\"padding: 10px 30px 30px 30px;\">\n                                <h2 style=\"margin: 0 0 20px 0; color: #1f2937; font-size: 20px; font-weight: 700; text-align: center;\">\n                                    📊 Detail Polutan\n                                </h2>\n                                <table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\">\n                                    ${[\n            { name: \"PM2.5\", value: data.pm25, status: pm25_status },\n            { name: \"CO\", value: data.co, status: co_status },\n            { name: \"NO₂\", value: data.no2, status: no2_status },\n            { name: \"O₃\", value: data.o3, status: o3_status }\n        ].map(pollutant => `\n                                        <tr>\n                                            <td style=\"padding: 12px 0;\">\n                                                <table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background: #f9fafb; border-radius: 10px; border-left: 4px solid ${getStatusColor(pollutant.status)}; overflow: hidden;\">\n                                                    <tr>\n                                                        <td style=\"padding: 16px 20px; width: 30%;\">\n                                                            <p style=\"margin: 0; font-size: 24px;\">${getPollutantIcon(pollutant.name)}</p>\n                                                            <p style=\"margin: 5px 0 0 0; font-size: 14px; color: #6b7280; font-weight: 600;\">${pollutant.name}</p>\n                                                        </td>\n                                                        <td style=\"padding: 16px 20px; text-align: center; width: 30%;\">\n                                                            <p style=\"margin: 0; font-size: 28px; color: #1f2937; font-weight: 700;\">${pollutant.value}</p>\n                                                            <p style=\"margin: 5px 0 0 0; font-size: 12px; color: #9ca3af;\">µg/m³</p>\n                                                        </td>\n                                                        <td style=\"padding: 16px 20px; text-align: right; width: 40%;\">\n                                                            <span style=\"display: inline-block; padding: 8px 16px; background: ${getStatusColor(pollutant.status)}; color: #ffffff; border-radius: 20px; font-size: 13px; font-weight: 700; box-shadow: 0 2px 8px rgba(0,0,0,0.15);\">\n                                                                ${pollutant.status}\n                                                            </span>\n                                                        </td>\n                                                    </tr>\n                                                </table>\n                                            </td>\n                                        </tr>\n                                    `).join('')}\n                                </table>\n                            </td>\n                        </tr>\n                        \n                        <!-- Safety Recommendations -->\n                        <tr>\n                            <td style=\"padding: 0 30px 30px 30px;\">\n                                <div style=\"background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); border-radius: 12px; padding: 25px; border: 2px solid #fca5a5;\">\n                                    <h3 style=\"margin: 0 0 15px 0; color: #991b1b; font-size: 18px; font-weight: 700; display: flex; align-items: center;\">\n                                        🛡️ Tindakan Pencegahan\n                                    </h3>\n                                    <ul style=\"margin: 0; padding-left: 20px; color: #7f1d1d; line-height: 1.8; font-size: 14px;\">\n                                        <li style=\"margin-bottom: 8px;\"><strong>Tetap di dalam ruangan</strong> dan tutup jendela</li>\n                                        <li style=\"margin-bottom: 8px;\"><strong>Gunakan masker N95/P2</strong> jika harus keluar</li>\n                                        <li style=\"margin-bottom: 8px;\"><strong>Hindari aktivitas fisik</strong> di luar ruangan</li>\n                                        <li style=\"margin-bottom: 8px;\"><strong>Gunakan air purifier</strong> jika tersedia</li>\n                                        <li><strong>Perhatikan kelompok rentan</strong> (anak-anak, lansia, penderita asma)</li>\n                                    </ul>\n                                </div>\n                            </td>\n                        </tr>\n                        \n                        <!-- Footer -->\n                        <tr>\n                            <td style=\"background: #f9fafb; padding: 25px 30px; text-align: center; border-top: 1px solid #e5e7eb;\">\n                                <p style=\"margin: 0; font-size: 12px; color: #6b7280; line-height: 1.6;\">\n                                    Pesan otomatis dari <strong>Sistem Monitoring Kualitas Udara Captone 07</strong><br>\n                                    Powered by Node-RED | Tetap waspada dan jaga kesehatan Anda\n                                </p>\n                            </td>\n                        </tr>\n                        \n                    </table>\n                </td>\n            </tr>\n        </table>\n    </body>\n    </html>\n    `;\n    msg.headers = { \"content-type\": \"text/html\" };\n    return msg;\n} else {\n    return null;\n}",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1070,
+        "y": 360,
+        "wires": [
+            [
+                "026c6e94724047cd",
+                "dc25df6ab6820738"
+            ]
+        ]
+    },
+    {
+        "id": "026c6e94724047cd",
+        "type": "debug",
+        "z": "65fe52f607d77008",
+        "name": "debug",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1250,
+        "y": 400,
+        "wires": []
+    },
+    {
+        "id": "b9429c2c49e580e0",
+        "type": "mqtt in",
+        "z": "65fe52f607d77008",
+        "name": "MQTT STM32 2",
+        "topic": "capstone07/stm32/data/loc",
+        "qos": "0",
+        "datatype": "auto-detect",
+        "broker": "11508b14721a3a58",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 160,
+        "y": 240,
+        "wires": [
+            [
+                "00ac99303576febc",
+                "c94105c1e183143a"
+            ]
+        ]
+    },
+    {
+        "id": "c94105c1e183143a",
+        "type": "function",
+        "z": "65fe52f607d77008",
+        "name": "Merge DateTime",
+        "func": "// Identify which topic this message came from\nconst topic = msg.topic;\nconst payload = msg.payload;\n\n// Store messages in flow context\nif (topic === \"capstone07/stm32/data\") {\n    flow.set(\"data_msg\", payload);\n} else if (topic === \"capstone07/stm32/data/loc\") {\n    flow.set(\"loc_msg\", payload);\n}\n\n// Retrieve both stored payloads\nconst data_msg = flow.get(\"data_msg\");\nconst loc_msg = flow.get(\"loc_msg\");\n\n// Only continue if both exist\nif (data_msg && loc_msg) {\n    // Merge both payloads\n    const merged = { ...loc_msg, ...data_msg, dateTime: new Date().toISOString() };\n\n    const lat = merged.lat;\n    const lon = merged.lon;\n\n    if (lat === undefined || lon === undefined) {\n        node.warn(\"Missing latitude or longitude — skipping OSM request\");\n        // Reset to avoid cache reuse\n        flow.set(\"data_msg\", null);\n        flow.set(\"loc_msg\", null);\n        return null;\n    }\n\n    // Save merged data for later use after OSM request\n    msg.osmOriginalPayload = merged;\n\n    // Build OSM reverse geocode HTTP request\n    msg.method = \"GET\";\n    msg.url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`;\n    msg.headers = {\n        \"User-Agent\": \"Node-RED-OpenStreetMap/1.0 varick.zahir@gmail.com\"\n    };\n\n    // ✅ Reset the cache right after merging (so next pair starts fresh)\n    flow.set(\"data_msg\", null);\n    flow.set(\"loc_msg\", null);\n\n    return msg;\n}\n\nreturn null;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 410,
+        "y": 200,
+        "wires": [
+            [
+                "53a3db19cbfb7839"
+            ]
+        ]
+    },
+    {
+        "id": "53a3db19cbfb7839",
+        "type": "http request",
+        "z": "65fe52f607d77008",
+        "name": "OpenStreetMap",
+        "method": "use",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 600,
+        "y": 280,
+        "wires": [
+            [
+                "686dd3844393a1a2"
+            ]
+        ]
+    },
+    {
+        "id": "00ac99303576febc",
+        "type": "debug",
+        "z": "65fe52f607d77008",
+        "name": "debug",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 370,
+        "y": 300,
+        "wires": []
+    },
+    {
+        "id": "442232a4c5ca698f",
+        "type": "debug",
+        "z": "65fe52f607d77008",
+        "name": "debug",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 370,
+        "y": 100,
+        "wires": []
+    },
+    {
+        "id": "4d0961f5dec427ce",
+        "type": "debug",
+        "z": "65fe52f607d77008",
+        "name": "debug",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 970,
+        "y": 160,
+        "wires": []
+    },
+    {
+        "id": "11508b14721a3a58",
+        "type": "mqtt-broker",
+        "name": "",
+        "broker": "broker.hivemq.com",
+        "port": 1883,
+        "clientid": "",
+        "autoConnect": true,
+        "usetls": false,
+        "protocolVersion": 4,
+        "keepalive": 60,
+        "cleansession": true,
+        "autoUnsubscribe": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthRetain": "false",
+        "birthPayload": "",
+        "birthMsg": {},
+        "closeTopic": "",
+        "closeQos": "0",
+        "closeRetain": "false",
+        "closePayload": "",
+        "closeMsg": {},
+        "willTopic": "",
+        "willQos": "0",
+        "willRetain": "false",
+        "willPayload": "",
+        "willMsg": {},
+        "userProps": "",
+        "sessionExpiry": ""
+    },
+    {
+        "id": "7d9a9bf2c24fd0b0",
+        "type": "mongodb",
+        "hostname": "capstone.va7sxnf.mongodb.net",
+        "topology": "dnscluster",
+        "connectOptions": "",
+        "port": 27017,
+        "db": "STM32",
+        "name": "Mongodb"
+    }
+]
