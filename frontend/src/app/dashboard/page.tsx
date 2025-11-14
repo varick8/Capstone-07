@@ -297,7 +297,7 @@ export default function AirQualityDashboard() {
   // Fetch sensor data from backend
   const fetchSensorData = async () => {
     try {
-      const response = await fetch("https://capstone-07-backend.vercel.app/api/merge/home", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/merge/home`, {
         method: "GET",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -395,7 +395,7 @@ export default function AirQualityDashboard() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const response = await fetch("https://capstone-07-backend.vercel.app/api/auth/me", {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/me`, {
           method: "GET",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
@@ -442,7 +442,7 @@ export default function AirQualityDashboard() {
 
   const handleLogout = async () => {
     try {
-      await fetch("https://capstone-07-backend.vercel.app/api/auth/logout", {
+      await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/logout`, {
         method: "POST",
         credentials: "include",
       });

@@ -12,7 +12,10 @@ dotenv.config();
 
 const app = express();
 
-const allowedOrigins = ["http://localhost:3000", "https://capstone-07.vercel.app"];
+// Parse allowed origins from environment variable (comma-separated)
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
+  : ["http://localhost:3000"];
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());

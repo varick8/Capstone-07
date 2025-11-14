@@ -291,7 +291,7 @@ function AirQualityDetailPageContent() {
   const fetchSensorDetail = async (pollutantParam: string) => {
     try {
       setDataLoading(true);
-      const response = await fetch(`https://capstone-07-backend.vercel.app/api/merge/detail/${pollutantParam}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/merge/detail/${pollutantParam}`, {
         method: "GET",
         credentials: "include",
         headers: {
@@ -341,7 +341,7 @@ function AirQualityDetailPageContent() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const res = await fetch("https://capstone-07-backend.vercel.app/api/auth/me", {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/me`, {
           credentials: "include",
         });
         if (!res.ok) {
@@ -372,7 +372,7 @@ function AirQualityDetailPageContent() {
 
   const handleLogout = async () => {
     try {
-      await fetch("https://capstone-07-backend.vercel.app/api/auth/logout", {
+      await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/logout`, {
         method: "POST",
         credentials: "include",
       });
