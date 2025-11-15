@@ -20,8 +20,8 @@
         "rap": true,
         "rh": 0,
         "inputs": 0,
-        "x": 160,
-        "y": 160,
+        "x": 180,
+        "y": 200,
         "wires": [
             [
                 "442232a4c5ca698f",
@@ -49,7 +49,7 @@
         "type": "function",
         "z": "65fe52f607d77008",
         "name": "Location",
-        "func": "// The HTTP response from Nominatim (OpenStreetMap)\nconst osmData = msg.payload;\n\n// Retrieve the original sensor data that was stored earlier\nlet merged = msg.osmOriginalPayload || {};\n\n// Extract county and state from the OSM response\nif (osmData && osmData.address) {\n    const county = osmData.address.county || \"\";\n    const state = osmData.address.state || \"\";\n\n    // Build a concise location string (e.g., \"Sleman, Daerah Istimewa Yogyakarta\")\n    if (county && state) {\n        merged.loc = `${county}, ${state}`;\n    } else if (state) {\n        merged.loc = state;\n    } else {\n        merged.loc = osmData.display_name || \"Unknown location\";\n    }\n} else {\n    merged.loc = \"Unknown location\";\n}\n\n// Remove latitude and longitude fields\ndelete merged.lat;\ndelete merged.lon;\n\n// Set the final merged object as payload\nmsg.payload = merged;\n\nreturn msg;",
+        "func": "// The HTTP response from Nominatim (OpenStreetMap)\nconst osmData = msg.payload;\n\n// Retrieve the original sensor data that was stored earlier\nlet merged = msg.osmOriginalPayload || {};\n\n// Extract county and state from the OSM response\nif (osmData && osmData.address) {\n    const county = osmData.address.county || \"\";\n    const state = osmData.address.state || \"\";\n\n    // Build a concise location string (e.g., \"Sleman, Daerah Istimewa Yogyakarta\")\n    if (county && state) {\n        merged.loc = `${county}, ${state}`;\n    } else if (state) {\n        merged.loc = state;\n    } else {\n        merged.loc = osmData.display_name || \"Unknown location\";\n    }\n} else {\n    merged.loc = null;\n}\n\n// Remove latitude and longitude fields\ndelete merged.lat;\ndelete merged.lon;\n\n// Set the final merged object as payload\nmsg.payload = merged;\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -176,40 +176,18 @@
         "wires": []
     },
     {
-        "id": "b9429c2c49e580e0",
-        "type": "mqtt in",
-        "z": "65fe52f607d77008",
-        "name": "MQTT STM32 2",
-        "topic": "capstone07/stm32/data/loc",
-        "qos": "0",
-        "datatype": "auto-detect",
-        "broker": "11508b14721a3a58",
-        "nl": false,
-        "rap": true,
-        "rh": 0,
-        "inputs": 0,
-        "x": 160,
-        "y": 240,
-        "wires": [
-            [
-                "00ac99303576febc",
-                "c94105c1e183143a"
-            ]
-        ]
-    },
-    {
         "id": "c94105c1e183143a",
         "type": "function",
         "z": "65fe52f607d77008",
-        "name": "Merge DateTime",
-        "func": "// Identify which topic this message came from\nconst topic = msg.topic;\nconst payload = msg.payload;\n\n// Store messages in flow context\nif (topic === \"capstone07/stm32/data\") {\n    flow.set(\"data_msg\", payload);\n} else if (topic === \"capstone07/stm32/data/loc\") {\n    flow.set(\"loc_msg\", payload);\n}\n\n// Retrieve both stored payloads\nconst data_msg = flow.get(\"data_msg\");\nconst loc_msg = flow.get(\"loc_msg\");\n\n// Only continue if both exist\nif (data_msg && loc_msg) {\n    // Merge both payloads\n    const merged = { ...loc_msg, ...data_msg, dateTime: new Date().toISOString() };\n\n    const lat = merged.lat;\n    const lon = merged.lon;\n\n    if (lat === undefined || lon === undefined) {\n        node.warn(\"Missing latitude or longitude — skipping OSM request\");\n        // Reset to avoid cache reuse\n        flow.set(\"data_msg\", null);\n        flow.set(\"loc_msg\", null);\n        return null;\n    }\n\n    // Save merged data for later use after OSM request\n    msg.osmOriginalPayload = merged;\n\n    // Build OSM reverse geocode HTTP request\n    msg.method = \"GET\";\n    msg.url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`;\n    msg.headers = {\n        \"User-Agent\": \"Node-RED-OpenStreetMap/1.0 varick.zahir@gmail.com\"\n    };\n\n    // ✅ Reset the cache right after merging (so next pair starts fresh)\n    flow.set(\"data_msg\", null);\n    flow.set(\"loc_msg\", null);\n\n    return msg;\n}\n\nreturn null;",
+        "name": "DateTime",
+        "func": "// Expecting everything in ONE topic only:\n// capstone07/stm32/data\n\nconst topic = msg.topic;\nconst payload = msg.payload;\n\nif (topic !== \"capstone07/stm32/data\") {\n    node.warn(\"Unexpected topic received\");\n    return null;\n}\n\n// Extract lat/lon directly\nconst lat = payload.lat;\nconst lon = payload.lon;\n\n// if (lat === undefined || lon === undefined) {\n//     node.warn(\"Missing latitude or longitude — skipping OSM request\");\n//     return null;\n// }\n\n// Add timestamp + keep all original sensor/loc data\nconst merged = {\n    ...payload,\n    dateTime: new Date().toISOString()\n};\n\n// Save merged data for later after OSM returns\nmsg.osmOriginalPayload = merged;\n\n// Prepare HTTP request to OSM\nmsg.method = \"GET\";\nmsg.url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`;\nmsg.headers = {\n    \"User-Agent\": \"Node-RED-OpenStreetMap/1.0 varick.zahir@gmail.com\"\n};\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 410,
+        "x": 380,
         "y": 200,
         "wires": [
             [
@@ -240,23 +218,6 @@
                 "686dd3844393a1a2"
             ]
         ]
-    },
-    {
-        "id": "00ac99303576febc",
-        "type": "debug",
-        "z": "65fe52f607d77008",
-        "name": "debug",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 370,
-        "y": 300,
-        "wires": []
     },
     {
         "id": "442232a4c5ca698f",

@@ -8,12 +8,12 @@ This Node-RED flow processes air quality sensor data from STM32 devices via MQTT
 
 ### Features
 
-- Real-time MQTT data ingestion from STM32 sensors
-- Reverse geocoding using OpenStreetMap API
-- ISPU calculation for PM2.5, CO, NO2, and O3
-- MongoDB storage for sensor data and ISPU values
-- Automated email alerts for dangerous air quality levels
-- Beautiful HTML email templates with detailed pollutant information
+- Real-time MQTT data ingestion from STM32 sensors with GPS coordinates
+- Reverse geocoding using OpenStreetMap Nominatim API
+- ISPU (Indonesian Air Pollution Standard Index) calculation for PM2.5, CO, NO2, and O3
+- MongoDB storage for raw sensor data and calculated ISPU values
+- Automated email alerts for dangerous air quality levels (ISPU > 300)
+- Beautiful HTML email templates with detailed pollutant information and safety recommendations
 
 ## Prerequisites
 
@@ -61,7 +61,7 @@ After importing, you need to configure several components:
 
 The flow uses HiveMQ public broker by default. To modify:
 
-1. Double-click any **MQTT in** node (e.g., "MQTT STM32 1")
+1. Double-click the **MQTT in** node (labeled "MQTT STM32 1")
 2. Click the pencil icon next to the broker field
 3. Configure your MQTT broker settings:
    - **Server**: `broker.hivemq.com` (or your broker address)
@@ -69,11 +69,10 @@ The flow uses HiveMQ public broker by default. To modify:
    - **Client ID**: Leave empty or specify unique ID
    - **Use TLS**: Unchecked (or enable if your broker requires it)
 
-**MQTT Topics:**
-- Sensor data: `capstone07/stm32/data`
-- Location data: `capstone07/stm32/data/loc`
+**MQTT Topic:**
+- All data (sensors + location): `capstone07/stm32/data`
 
-**Note**: If you change the topic names, update them in both MQTT input nodes.
+**Note**: The flow now uses a single topic for all data. If you change the topic name, update it in the MQTT input node.
 
 ### 2. MongoDB Configuration
 
@@ -120,7 +119,7 @@ Configure Gmail SMTP for sending alerts:
 
 ### 4. STM32 Data Format
 
-The flow expects the following JSON formats from your STM32 devices:
+The flow expects the following JSON format from your STM32 device:
 
 **Topic: `capstone07/stm32/data`**
 ```json
@@ -128,17 +127,13 @@ The flow expects the following JSON formats from your STM32 devices:
   "pm25": 35.5,
   "co": 5000,
   "no2": 120,
-  "o3": 80
-}
-```
-
-**Topic: `capstone07/stm32/data/loc`**
-```json
-{
+  "o3": 80,
   "lat": -7.771,
   "lon": 110.377
 }
 ```
+
+All sensor data and GPS coordinates are sent in a single payload to one topic.
 
 ## Running the Flow
 
@@ -168,14 +163,15 @@ To test email functionality:
 
 ## Data Flow Explanation
 
-1. **MQTT Input**: Receives sensor data and location data from separate topics
-2. **Merge DateTime**: Combines both payloads and adds timestamp
+1. **MQTT Input**: Receives sensor data with GPS coordinates from a single topic
+2. **DateTime Function**: Adds timestamp and prepares data for reverse geocoding
 3. **OpenStreetMap**: Performs reverse geocoding to get human-readable location
-4. **Location Function**: Extracts county and state from OSM response
-5. **MongoDB Storage**: Stores raw sensor data with location
+4. **Location Function**: Extracts county and state from OSM response, removes lat/lon
+5. **MongoDB Storage**: Stores raw sensor data with location in `sensors` collection
 6. **ISPU Calculation**: Calculates air pollution index for each pollutant
-7. **Status Determination**: Categorizes each pollutant (Baik, Sedang, Tidak Sehat, etc.)
-8. **Email Alert**: Sends detailed HTML email if any pollutant reaches "Berbahaya" level
+7. **MongoDB Storage**: Stores calculated ISPU values in `ispus` collection
+8. **Status Determination**: Categorizes each pollutant (Baik, Sedang, Tidak Sehat, etc.)
+9. **Email Alert**: Sends detailed HTML email if any pollutant reaches "Berbahaya" level
 
 ## ISPU Categories
 
@@ -220,9 +216,9 @@ To test email functionality:
 
 - **Problem**: Debug nodes show no output
 - **Solution**:
-  - Verify STM32 devices are publishing to correct topics
-  - Check MQTT message format matches expected structure
-  - Ensure both sensor data and location data are being published
+  - Verify STM32 device is publishing to correct topic (`capstone07/stm32/data`)
+  - Check MQTT message format matches expected structure (includes pm25, co, no2, o3, lat, lon)
+  - Ensure both sensor data and GPS coordinates are in the same payload
   - Review Node-RED logs for errors
 
 ### OpenStreetMap API Issues
@@ -238,7 +234,7 @@ To test email functionality:
 
 ### Modifying MQTT Topics
 
-Edit the topic names in the MQTT input nodes if your STM32 uses different topics.
+Edit the topic name in the MQTT input node and the "DateTime" function node if your STM32 uses a different topic.
 
 ### Changing Email Recipients
 
